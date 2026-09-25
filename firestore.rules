@@ -1,0 +1,133 @@
+rules_version = '2';
+// Pravidla pro portál nájemníků MJM.
+// Správkyně (e-maily níže) vidí a mění všechno. Nájemník vidí a mění jen svoje údaje
+// a teprve poté, co ho správkyně potvrdí.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() {
+      return verified() && request.auth.token.email in ['b.krejcova@mjmreality.cz', 'm.uhlirova@mjmpersonalni.cz'];
+    }
+    function meDoc() { return /databases/$(database)/documents/uzivatele/$(request.auth.uid); }
+    function me() { return get(meDoc()).data; }
+    function approved() { return verified() && exists(meDoc()) && me().stav == 'schvaleno'; }
+    function myOsoba() { return me().osobaId; }
+    function myAdresa() { return me().adresaId; }
+    function mineNew() { return approved() && request.resource.data.osobaId == myOsoba(); }
+    function mineOld() { return approved() && resource.data.osobaId == myOsoba(); }
+
+    // Nastavení, adresy, volné termíny schůzek: číst může každý přihlášený, měnit jen správa.
+    match /nastaveni/{id} { allow read: if verified(); allow write: if isAdmin(); }
+    match /adresy/{id} { allow read: if verified(); allow write: if isAdmin(); }
+    match /dostupnost/{id} { allow read: if verified(); allow write: if isAdmin(); }
+
+    // Registrace: nájemník si založí vlastní žádost, potvrdit ji může jen správa.
+    match /uzivatele/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow create: if verified() && request.auth.uid == uid
+        && request.resource.data.stav == 'ceka' && !('osobaId' in request.resource.data);
+      allow update: if isAdmin() || (verified() && request.auth.uid == uid
+        && resource.data.stav == 'zamitnuto' && request.resource.data.stav == 'ceka'
+        && !('osobaId' in request.resource.data));
+      allow delete: if isAdmin();
+    }
+
+    // Údaje o nájemníkovi: vidí jen on sám, mění jen správa.
+    match /osoby/{id} {
+      allow read: if isAdmin() || (approved() && id == myOsoba());
+      allow write: if isAdmin();
+    }
+    // Kontakt a jazyk: nájemník si může změnit svůj.
+    match /kontakty/{id} {
+      allow read, write: if isAdmin() || (approved() && id == myOsoba());
+    }
+    // Údaje z pasu: nájemník vidí a mění svoje, ale nesmí si sám označit „nahlášeno“.
+    match /pasy/{id} {
+      allow read: if isAdmin() || (approved() && id == myOsoba());
+      allow create: if isAdmin() || (approved() && id == myOsoba() && request.resource.data.osobaId == id
+        && request.resource.data.get('nahlaseno', '') == '');
+      allow update: if isAdmin() || (approved() && id == myOsoba() && request.resource.data.osobaId == id
+        && request.resource.data.get('nahlaseno', '') == resource.data.get('nahlaseno', '')
+        && request.resource.data.get('nahlasenyPas', '') == resource.data.get('nahlasenyPas', ''));
+      allow delete: if isAdmin();
+    }
+    match /zajemci/{id} {
+      allow read, write: if isAdmin() || (approved() && id == myOsoba());
+    }
+
+    // Věci, které nájemník zakládá a správa vyřizuje.
+    match /pozadavky/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create: if isAdmin() || (mineNew() && request.resource.data.stav == 'ceka');
+      allow update, delete: if isAdmin();
+    }
+    match /zadosti/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create: if isAdmin() || (mineNew() && request.resource.data.stav == 'ceka');
+      allow update, delete: if isAdmin();
+    }
+    match /dalsi/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create: if isAdmin() || (mineNew() && request.resource.data.stav == 'nove');
+      allow update, delete: if isAdmin();
+    }
+
+    // Kontrola bytu: vidí ji celý byt, fotky jen správa.
+    match /kontroly/{id} {
+      allow read: if isAdmin() || (approved() && resource.data.adresaId == myAdresa());
+      allow create: if isAdmin() || (mineNew() && request.resource.data.adresaId == myAdresa()
+        && request.resource.data.stav == 'odevzdano' && id == myAdresa() + '_' + request.resource.data.ym);
+      allow update, delete: if isAdmin();
+    }
+    match /kontrolyFoto/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || (approved() && request.resource.data.adresaId == myAdresa()
+        && id == myAdresa() + '_' + request.resource.data.ym);
+      allow update, delete: if isAdmin();
+    }
+
+    // Oznámení a nástěnka: jen pro adresy, kterým jsou určené.
+    match /oznameni/{id} {
+      allow read: if isAdmin() || (approved() && myAdresa() in resource.data.adresaIds);
+      allow write: if isAdmin();
+    }
+    match /potvrzeni/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create, update: if isAdmin() || (mineNew() && id == request.resource.data.oznameniId + '_' + myOsoba());
+      allow delete: if isAdmin();
+    }
+    match /nastenka/{id} {
+      allow read: if isAdmin() || (approved() && (resource.data.vsem == true || myAdresa() in resource.data.adresaIds));
+      allow write: if isAdmin();
+    }
+
+    // Schůzky: obsazené časy vidí všichni (bez jmen), podrobnosti jen správa a daný nájemník.
+    match /sloty/{id} {
+      allow read: if verified();
+      allow create: if isAdmin() || (mineNew() && request.resource.data.stav == 'rezervovano');
+      allow update: if isAdmin() || (approved() && (resource.data.osobaId == myOsoba() || resource.data.stav == 'zruseno')
+        && request.resource.data.osobaId == myOsoba());
+      allow delete: if isAdmin();
+    }
+    match /schuzky/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create: if isAdmin() || (mineNew() && request.resource.data.stav == 'rezervovano');
+      allow update: if isAdmin() || (approved() && (resource.data.osobaId == myOsoba() || resource.data.stav == 'zruseno')
+        && request.resource.data.osobaId == myOsoba());
+      allow delete: if isAdmin();
+    }
+
+    // Samostatné bydlení.
+    match /nabidky/{id} { allow read: if isAdmin() || approved(); allow write: if isAdmin(); }
+    match /prihlasky/{id} {
+      allow read: if isAdmin() || mineOld();
+      allow create, update: if isAdmin() || (mineNew() && id == request.resource.data.nabidkaId + '_' + myOsoba());
+      allow delete: if isAdmin();
+    }
+
+    // Jen pro správu.
+    match /upominky/{id} { allow read, write: if isAdmin(); }
+  }
+}
