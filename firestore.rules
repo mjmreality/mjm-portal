@@ -17,6 +17,13 @@ service cloud.firestore {
     function myAdresa() { return me().adresaId; }
     function mineNew() { return approved() && request.resource.data.osobaId == myOsoba(); }
     function mineOld() { return approved() && resource.data.osobaId == myOsoba(); }
+    // Přihlášení přístupovým kódem: kód musí patřit tomuto člověku a v téže dávce se na něj zapíše uid.
+    function kodOk(d) {
+      return d.stav == 'schvaleno' && d.kod is string
+        && getAfter(/databases/$(database)/documents/kody/$(d.kod)).data.osobaId == d.osobaId
+        && getAfter(/databases/$(database)/documents/kody/$(d.kod)).data.adresaId == d.adresaId
+        && getAfter(/databases/$(database)/documents/kody/$(d.kod)).data.uid == request.auth.uid;
+    }
 
     // Nastavení, adresy, volné termíny schůzek: číst může každý přihlášený, měnit jen správa.
     match /nastaveni/{id} { allow read: if verified(); allow write: if isAdmin(); }
@@ -27,11 +34,21 @@ service cloud.firestore {
     match /uzivatele/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow create: if verified() && request.auth.uid == uid
-        && request.resource.data.stav == 'ceka' && !('osobaId' in request.resource.data);
+        && ((request.resource.data.stav == 'ceka' && !('osobaId' in request.resource.data)) || kodOk(request.resource.data));
       allow update: if isAdmin() || (verified() && request.auth.uid == uid
-        && resource.data.stav == 'zamitnuto' && request.resource.data.stav == 'ceka'
-        && !('osobaId' in request.resource.data));
+        && resource.data.stav in ['ceka', 'zamitnuto', 'zruseno']
+        && ((request.resource.data.stav == 'ceka' && !('osobaId' in request.resource.data)) || kodOk(request.resource.data)));
       allow delete: if isAdmin();
+    }
+
+    // Přístupové kódy: kdo kód zná, může si ho přečíst (ne vypsat všechny) a jednou ho použít.
+    match /kody/{kod} {
+      allow get: if verified();
+      allow list, create, delete: if isAdmin();
+      allow update: if isAdmin() || (verified() && resource.data.uid == ''
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/uzivatele/$(request.auth.uid)).data.kod == kod);
     }
 
     // Údaje o nájemníkovi: vidí jen on sám, mění jen správa.

@@ -324,7 +324,7 @@ function konto(o){
 
 // ---------- stav stránky
 const S = { adresy:[], osoby:[], platby:[], nast:{pocatek:'2026-01', splatnostDen:15, vypisDo:'', dniPred:3, dniPo:1, dniPo2:14, firma:'', firmaEmail:'', podpis:'', uctyAdres:{}},
-  kontakty:{}, pozadavky:[], upominky:{}, zadosti:[], seedOsoby:[], osobyPortal:{}, reg:false, regLang:'cs', voda:{}, vodaN:{studena:1, tepla:1}, oznameni:[], potvrzeni:{}, odlozeno:{}, oznAdr:new Set(), oznQ:'', oznDraft:{}, dostupnost:{}, schuzky:[], kontroly:{}, simBlok:false, kMes:'', nastenka:[], nasAdr:new Set(), nasQ:'', nasDraft:{}, zadostiDalsi:[], schMes:'', schVyb:'', schDen:'', schCas:'', schDraft:{}, zajemci:{}, nabidky:[], prihlasky:{}, nabDraft:{}, nabOdl:{}, pasy:{}, pasFiltr:'k', downloads:null, sloty:[], uzivatele:[], kFoto:{}, kFotoLoaded:{}, phase:'loading', admin:false, user:null, me:null, authMode:'login', uzOsoba:{}, assets:null, mode:'najemnik', osobaId:'', tab:'pozadavky', q:'', open:{} };
+  kontakty:{}, pozadavky:[], upominky:{}, zadosti:[], seedOsoby:[], osobyPortal:{}, reg:false, regLang:'cs', voda:{}, vodaN:{studena:1, tepla:1}, oznameni:[], potvrzeni:{}, odlozeno:{}, oznAdr:new Set(), oznQ:'', oznDraft:{}, dostupnost:{}, schuzky:[], kontroly:{}, simBlok:false, kMes:'', nastenka:[], nasAdr:new Set(), nasQ:'', nasDraft:{}, zadostiDalsi:[], schMes:'', schVyb:'', schDen:'', schCas:'', schDraft:{}, zajemci:{}, nabidky:[], prihlasky:{}, nabDraft:{}, nabOdl:{}, pasy:{}, pasFiltr:'k', downloads:null, sloty:[], uzivatele:[], kody:{}, kFoto:{}, kFotoLoaded:{}, phase:'loading', admin:false, user:null, me:null, authMode:'login', uzOsoba:{}, assets:null, mode:'najemnik', osobaId:'', tab:'pozadavky', q:'', open:{} };
 let db = null;
 const KAT = ['Voda a odpad','Topení','Elektřina','Okna a dveře','Spotřebiče','Plíseň a vlhkost','Zámek a klíče','Jiné'];
 const NAL = {bezne:'Běžné', spech:'Spěchá', havarie:'Havárie'};
@@ -2079,7 +2079,10 @@ const TA = {
     regH:'Registrace', regP:'Vyplňte své údaje. Správkyně vás pak potvrdí a uvidíte svoje údaje, platby a všechny funkce.',
     pendingH:'Čekáme na potvrzení', pendingP:'Vaši registraci teď ověřuje správkyně. Jakmile ji potvrdí, uvidíte tu svoje údaje a všechny funkce. Zatím si můžete přečíst pravidla a časté otázky.',
     rejected:'Registraci se nepodařilo potvrdit. Zkontrolujte údaje a pošlete ji znovu.', send:'Odeslat registraci', sent:'Registrace odeslána.', loading:'Načítám…',
-    err:'Aplikaci se nepodařilo načíst. Obnovte stránku.', logout:'Odhlásit', emailL:'Váš e-mail' },
+    err:'Aplikaci se nepodařilo načíst. Obnovte stránku.', logout:'Odhlásit', emailL:'Váš e-mail',
+    kodH:'Máte přístupový kód?', kodP:'Najdete ho na lístečku, který jste dostali od správkyně. S kódem uvidíte svoje údaje hned.', kod:'Přístupový kód', kodPh:'např. K7M4-PX2A',
+    kodSend:'Pokračovat s kódem', kodBad:'Tento kód neplatí. Zkontrolujte ho, nebo se ozvěte správkyni.', kodUsed:'Tento kód už někdo použil. Ozvěte se prosím správkyni.', kodOk:'Hotovo, jste přihlášení.',
+    bezKodu:'Nemám kód – zaregistrovat se jinak', bezKoduP:'Bez kódu musí vaši registraci ručně potvrdit správkyně. Do té doby neuvidíte svoje údaje.' },
   en:{ welcome:'Tenant portal of MJM. Sign in or create an account.', google:'Sign in with Google', nebo:'or with email and password',
     email:'Email', heslo:'Password', heslo2:'Password again', login:'Sign in', register:'Create account', toReg:'No account? Create one', toLogin:'Already have an account? Sign in',
     reset:'I forgot my password', resetOk:'We sent you an email with a link to set a new password.', needEmail:'Please enter your email first.', spam:'Our emails may end up in spam. If nothing arrives, check there.',
@@ -2088,7 +2091,10 @@ const TA = {
     regH:'Registration', regP:'Fill in your details. The manager will confirm you and then you will see your details, payments and all features.',
     pendingH:'Waiting for confirmation', pendingP:'The manager is checking your registration. When she confirms it, you will see your details and all features here. Meanwhile you can read the rules and FAQ.',
     rejected:'We could not confirm your registration. Check your details and send it again.', send:'Send registration', sent:'Registration sent.', loading:'Loading…',
-    err:'The app could not be loaded. Please refresh the page.', logout:'Sign out', emailL:'Your email' }
+    err:'The app could not be loaded. Please refresh the page.', logout:'Sign out', emailL:'Your email',
+    kodH:'Do you have an access code?', kodP:'You will find it on the slip you got from the manager. With the code you will see your details right away.', kod:'Access code', kodPh:'e.g. K7M4-PX2A',
+    kodSend:'Continue with the code', kodBad:'This code is not valid. Check it or contact the manager.', kodUsed:'This code has already been used. Please contact the manager.', kodOk:'Done, you are signed in.',
+    bezKodu:'I do not have a code – register another way', bezKoduP:'Without a code the manager has to confirm your registration by hand. Until then you will not see your details.' }
 };
 const authErr = (e, L) => { const c = (e && e.code) || '', cs = L !== 'en';
   if (/popup-closed|cancelled-popup/.test(c)) return '';
@@ -2100,6 +2106,10 @@ const authErr = (e, L) => { const c = (e && e.code) || '', cs = L !== 'en';
   if (/unauthorized-domain/.test(c)) return cs ? 'Tato adresa ještě není povolená ve Firebase (Authorized domains).' : 'This address is not authorised in Firebase.';
   return cs ? 'Nepodařilo se, zkuste to znovu.' : 'Something went wrong, please try again.'; };
 
+const KOD_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const normKod = v => String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);
+const fmtKod = k => k ? k.slice(0,4)+'-'+k.slice(4) : '';
+const novyKod = () => { const b = new Uint32Array(8); crypto.getRandomValues(b); return [...b].map(x=>KOD_ABC[x % KOD_ABC.length]).join(''); };
 function langSeg(){ const L = S.regLang; return `<div class="seg" role="group" aria-label="Jazyk / Language"><button type="button" data-reglang="cs" aria-pressed="${L==='cs'}">CZ</button><button type="button" data-reglang="en" aria-pressed="${L==='en'}">EN</button></div>`; }
 function viewPhase(){
   const L = S.regLang, t = TA[L];
@@ -2123,7 +2133,15 @@ function viewPhase(){
   }
   else if (S.phase==='verify') body = head(t.verifyH) + `<section class="card"><p>${esc(t.verifyP(S.user?.email||''))}</p><p class="acct">${t.spam}</p>
       <div class="row"><button type="button" class="primary" data-auth="reloaded">${t.verified}</button><button type="button" data-auth="resend">${t.resend}</button></div></section>`;
-  else if (S.phase==='register') body = head(t.regH) + `${S.me && S.me.stav==='zamitnuto' ? `<div class="warnbox">${t.rejected}${S.me.duvodZamitnuti?` ${esc(S.me.duvodZamitnuti)}`:''}</div>` : ''}<section class="card"><p class="acct">${t.regP}</p>${uzForm(L)}</section>`;
+  else if (S.phase==='register') body = head(t.regH) + `${S.me && S.me.stav==='zamitnuto' ? `<div class="warnbox">${t.rejected}${S.me.duvodZamitnuti?` ${esc(S.me.duvodZamitnuti)}`:''}</div>` : ''}
+    <section class="card"><h3>${t.kodH}</h3><p class="acct">${t.kodP}</p>
+      <form class="form" id="kodForm">
+        <label class="f" for="k-kod">${t.kod}<input id="k-kod" autocapitalize="characters" autocomplete="off" placeholder="${t.kodPh}" required style="font:600 18px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em"></label>
+        <label class="f" for="k-tel">${TZ[L].tel}<input id="k-tel" type="tel" autocomplete="tel" required></label>
+        ${gdprDetails(L, L==='en'?'Read: how we process your personal data':'Přečíst: jak zpracováváme vaše osobní údaje')}
+        <label class="radio"><input type="checkbox" id="k-gdpr" required><span>${L==='en'?'I have read the information on personal data processing.':'Seznámil(a) jsem se s informacemi o zpracování osobních údajů.'}</span></label>
+        <button class="primary" type="submit">${t.kodSend}</button></form></section>
+    <details class="card"><summary style="cursor:pointer;font-weight:600;color:var(--accent)">${t.bezKodu}</summary><p class="acct" style="margin-top:8px">${t.bezKoduP}</p><p class="acct">${t.regP}</p>${uzForm(L)}</details>`;
   else if (S.phase==='pending') body = head(t.pendingH) + `<section class="card" style="border-color:var(--warn)"><p>${t.pendingP}</p></section>${infoCard(L)}${faqCard(L)}${odkazyCard(L)}`;
   return `<div class="phone" lang="${L}">${body}</div>`;
 }
@@ -2174,10 +2192,11 @@ function viewUzivatele(){
         ${S.open['uz'+u._id]?`<div class="row" style="grid-column:1/-1"><input id="uzd-${u._id}" placeholder="Důvod zamítnutí, uvidí ho nájemník" style="flex:1 1 240px"><button class="danger" data-uz="no" data-id="${u._id}">Potvrdit zamítnutí</button></div>`:''}
       </div></div>`;
   };
-  return `<div class="flow" style="margin-bottom:12px"><span>Nájemník se zaregistruje</span>→<span>Vy vyberete, kdo to je v přehledu</span>→<span>Potvrdíte</span>→<span>Uvidí svoje údaje a QR kód</span></div>
+  return `<div class="flow" style="margin-bottom:12px"><span>Nájemník zadá přístupový kód</span>→<span>Aplikace ho sama přiřadí</span>→<span>Hned vidí svoje údaje</span></div>
+    <p class="note" style="margin-bottom:12px">Kdo kód nemá, zaregistruje se bez něj a objeví se tady. Takovou registraci potvrďte, jen když si jste jistá, kdo to je (třeba po telefonu).</p>
     <section class="panel"><h2>Čeká na potvrzení <span class="pill mute">${ceka.length}</span></h2><p class="note">Aplikace sama navrhne, ke komu z přehledu registrace patří (podle jména a adresy). Zkontrolujte to a potvrďte.</p>${ceka.map(item).join('') || '<p class="acct">Nikdo nečeká.</p>'}</section>
-    <details class="panel"><summary style="cursor:pointer"><h2 style="display:inline">Potvrzení nájemníci</h2> <span class="pill mute">${hotovo.length}</span></summary>
-      ${hotovo.map(u=>{ const o = S.osoby.find(x=>x.id===u.osobaId) || {}; return `<div class="li"><span><b>${esc(o.jmeno||u.jmeno)}</b><br><span class="acct">${esc(adresaOf(o).adresa||'')} · ${esc(u.email||'')}</span></span><span class="acct r">${fDate(u.schvaleno)}</span></div>`; }).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
+    <details class="panel" open><summary style="cursor:pointer"><h2 style="display:inline">Potvrzení nájemníci</h2> <span class="pill mute">${hotovo.length}</span></summary>
+      ${hotovo.map(u=>{ const o = S.osoby.find(x=>x.id===u.osobaId) || {}; return `<div class="li"><span><b>${esc(o.jmeno||u.jmeno)}</b><br><span class="acct">${esc(adresaOf(o).adresa||'')} · ${esc(u.email||'')} · ${u.cesta==='kod'?'přes kód':'potvrzeno ručně'} ${fDate(u.schvaleno)}</span></span><span class="r"><button class="ghost danger" data-uz="zrusit" data-id="${u._id}">Zrušit přístup</button></span></div>`; }).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
     ${zam.length?`<details class="panel"><summary style="cursor:pointer"><h2 style="display:inline">Zamítnuté</h2> <span class="pill mute">${zam.length}</span></summary>${zam.map(u=>`<div class="li"><span><b>${esc(u.jmeno)}</b><br><span class="acct">${esc(u.email||'')}${u.duvodZamitnuti?` · ${esc(u.duvodZamitnuti)}`:''}</span></span></div>`).join('')}</details>`:''}`;
 }
 async function uzSchvalit(uid){
@@ -2202,22 +2221,38 @@ async function uzSchvalit(uid){
 function viewNajemnici(){
   const q = S.q.trim().toLowerCase();
   const list = [...S.osoby].sort((a,b)=>(adresaOf(a).poradi||0)-(adresaOf(b).poradi||0) || (adresaOf(a).adresa||'').localeCompare(adresaOf(b).adresa||'','cs') || a.jmeno.localeCompare(b.jmeno,'cs'))
-    .filter(o=>!q || (o.jmeno+' '+(adresaOf(o).adresa||'')+' '+(o.vs||'')+' '+(kontakt(o.id).email||'')).toLowerCase().includes(q));
+    .filter(o=>!q || (o.jmeno+' '+(adresaOf(o).adresa||'')+' '+(o.vs||'')+' '+(o.kod||'')+' '+fmtKod(o.kod)+' '+(kontakt(o.id).email||'')).toLowerCase().includes(q));
   const all = S.osoby;
   return `<div class="stats" style="margin-bottom:14px">
       <div><b>${all.length}</b><span>lidí v přehledu</span></div>
-      <div><b>${all.filter(o=>o.uid).length}</b><span>má účet v aplikaci</span></div>
+      <div><b>${all.filter(o=>maUcet(o)).length}</b><span>má účet v aplikaci</span></div>
       <div><b>${all.filter(o=>o.plati).length}</b><span>platí</span></div>
       <div><b>${all.filter(o=>o.plati && !(+o.predpis>0)).length}</b><span>platí, ale nemá předpis</span></div></div>
     <p class="note" style="margin-bottom:10px">Předpis a „platí“ můžete měnit rovnou tady, uloží se po opuštění políčka. Nájemník uvidí částku a QR kód, jen když platí a má předpis. Dluhy ve zkušební verzi nevidí.</p>
-    <div class="row" style="margin-bottom:10px"><input type="search" id="q" placeholder="Hledat jméno, adresu, VS nebo e-mail" value="${esc(S.q)}" aria-label="Hledat" style="max-width:420px"></div>
-    <div class="panel" style="padding:0"><div class="tbl"><table><thead><tr><th>Jméno</th><th>Adresa</th><th>VS</th><th>Platí</th><th>Předpis Kč</th><th>Účet v aplikaci</th><th>Telefon</th></tr></thead><tbody>
+    <div class="row" style="margin-bottom:10px"><input type="search" id="q" placeholder="Hledat jméno, adresu, VS, kód nebo e-mail" value="${esc(S.q)}" aria-label="Hledat" style="max-width:420px"><button data-kod="csv">Stáhnout tabulku kódů</button></div>
+    <p class="note" style="margin-bottom:10px">Přístupový kód nájemník zadá při registraci a aplikace ho sama přiřadí ke správnému člověku. Každý kód jde použít jen jednou. Když ho někdo ztratí nebo ho použil někdo cizí, klikněte na „Nový“ a u potvrzeného účtu v Registracích „Zrušit přístup“.</p>
+    <div class="panel" style="padding:0"><div class="tbl"><table><thead><tr><th>Jméno</th><th>Adresa</th><th>VS</th><th>Platí</th><th>Předpis Kč</th><th>Přístupový kód</th><th>Účet v aplikaci</th><th>Telefon</th></tr></thead><tbody>
     ${list.map(o=>{const kk = kontakt(o.id); return `<tr><td><b>${esc(o.jmeno)}</b></td><td class="acct">${esc(adresaOf(o).adresa||'')}</td><td>${o.vs?esc(o.vs):'<span class="pill warn">chybí</span>'}</td>
       <td><input type="checkbox" data-osf="plati" data-id="${o.id}" aria-label="Platí ${esc(o.jmeno)}"${o.plati?' checked':''} style="width:auto"></td>
       <td><input type="number" step="1" min="0" data-osf="predpis" data-id="${o.id}" value="${+o.predpis||''}" aria-label="Předpis ${esc(o.jmeno)}" style="width:100px"></td>
-      <td>${o.uid?`<span class="pill ok">ano</span> <span class="acct">${esc(kk.email||o.email||'')}</span>`:'<span class="pill mute">zatím ne</span>'}</td>
+      <td style="white-space:nowrap">${o.kod?`<code style="font:600 13px ui-monospace,Menlo,Consolas,monospace">${fmtKod(o.kod)}</code>${S.kody[o.kod]&&S.kody[o.kod].uid?' <span class="pill ok">použit</span>':''}`:'<span class="pill mute">—</span>'} <button class="ghost" data-kod="novy" data-id="${o.id}" title="Vytvořit nový kód, starý přestane platit">Nový</button></td>
+      <td>${maUcet(o)?`<span class="pill ok">ano</span> <span class="acct">${esc(kk.email||o.email||'')}</span>`:'<span class="pill mute">zatím ne</span>'}</td>
       <td class="acct">${esc(kk.telefon||'')}</td></tr>`;}).join('')}
     </tbody></table></div></div>`;
+}
+const maUcet = o => o.uid || S.uzivatele.some(u=>u.osobaId===o.id && u.stav==='schvaleno');
+async function novyKodPro(oid){
+  const o = S.osoby.find(x=>x.id===oid); if (!o) return;
+  const kod = novyKod(), ops = [['set', 'kody/'+kod, {osobaId:o.id, adresaId:o.adresaId, jmeno:o.jmeno, uid:''}], ['update', 'osoby/'+o.id, {kod}]];
+  if (o.kod && S.kody[o.kod] && !S.kody[o.kod].uid) ops.push(['delete', 'kody/'+o.kod]);
+  const ok = await write(()=>db.batch(ops), `Nový kód pro ${o.jmeno}: ${fmtKod(kod)}`);
+  if (ok) toast(`Nový kód: ${fmtKod(kod)}. Starý kód už neplatí.`);
+}
+function stahnoutKody(){
+  const cell = v => { v = String(v ?? ''); return /[;"\n\r]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+  const rows = [...S.osoby].sort((a,b)=>(adresaOf(a).poradi||0)-(adresaOf(b).poradi||0) || (adresaOf(a).adresa||'').localeCompare(adresaOf(b).adresa||'','cs') || a.jmeno.localeCompare(b.jmeno,'cs'))
+    .map(o=>[adresaOf(o).adresa||'', o.jmeno, o.vs||'', fmtKod(o.kod), maUcet(o)?'ano':'ne']);
+  stahnout(`pristupove-kody_${todayISO()}.csv`, '\ufeff' + [['Adresa','Jméno','Variabilní symbol','Přístupový kód','Má účet'], ...rows].map(r=>r.map(cell).join(';')).join('\r\n'), 'text/csv');
 }
 function importPanel(){
   return `<section class="panel"><h2>Nahrát data</h2>
@@ -2232,8 +2267,9 @@ async function importDat(){
   for (const a of data.adresy||[]) ops.push(['merge', 'adresy/'+a.id, a]);
   for (const o of data.osoby||[]) ops.push(['merge', 'osoby/'+o.id, o]);
   if (data.nastaveni) ops.push(['merge', 'nastaveni/portal', data.nastaveni]);
+  for (const k of data.kody||[]) { if (!S.kody[k.kod]) ops.push(['set', 'kody/'+k.kod, {osobaId:k.osobaId, adresaId:k.adresaId, jmeno:k.jmeno||'', uid:''}]); }
   if (!ops.length) { toast('V souboru nejsou žádná data.'); return; }
-  await write(()=>db.batch(ops), `Nahráno: ${(data.adresy||[]).length} adres a ${(data.osoby||[]).length} lidí.`);
+  await write(()=>db.batch(ops), `Nahráno: ${(data.adresy||[]).length} adres, ${(data.osoby||[]).length} lidí${(data.kody||[]).length?` a ${(data.kody||[]).length} přístupových kódů`:''}.`);
 }
 function nactiFotky(ym){
   if (!S.admin || S.kFotoLoaded[ym]) return;
@@ -2250,6 +2286,7 @@ function subAdmin(){
   c('osoby', q=>{ S.seedOsoby = q.docs.map(d=>({...d.data(), id:d.id})); mergeOsoby(); });
   c('kontakty', q=>{ S.kontakty = map(q); });
   c('uzivatele', q=>{ S.uzivatele = arr(q); });
+  c('kody', q=>{ S.kody = map(q); });
   c('pozadavky', q=>{ S.pozadavky = arr(q); });
   c('kontroly', q=>{ S.kontroly = map(q); S.kFotoLoaded = {}; });
   c('nastenka', q=>{ S.nastenka = arr(q); });
@@ -2330,9 +2367,11 @@ document.addEventListener('click', async ev => {
     const id = b.dataset.id, v = b.dataset.uz;
     if (v==='ok') { b.disabled = true; await uzSchvalit(id); b.disabled = false; }
     if (v==='noAsk') { S.open['uz'+id] = 1; render(); document.getElementById('uzd-'+id)?.focus(); }
+    if (v==='zrusit') { await write(()=>db.doc('uzivatele/'+id).update({stav:'zruseno', zruseno:new Date().toISOString()}), 'Přístup zrušen. Nájemníkovi vytvořte nový kód.'); return; }
     if (v==='no') { await write(()=>db.doc('uzivatele/'+id).update({stav:'zamitnuto', duvodZamitnuti:(document.getElementById('uzd-'+id)?.value||'').trim()}), 'Zamítnuto'); delete S.open['uz'+id]; }
     return;
   }
+  if (b.dataset.kod) { if (b.dataset.kod==='csv') stahnoutKody(); else { b.disabled = true; await novyKodPro(b.dataset.id); b.disabled = false; } return; }
   if (b.dataset.act==='import') { b.disabled = true; await importDat(); b.disabled = false; }
 });
 document.addEventListener('change', async ev => {
@@ -2352,6 +2391,25 @@ document.addEventListener('submit', async ev => {
       if (S.authMode==='register') { if (p !== $('#a-heslo2').value) { toast(t.hesla); btn.disabled = false; return; } await AUTH.register(e, p); }
       else await AUTH.login(e, p);
     } catch (er) { const m = authErr(er, L); if (m) toast(m); console.warn(er); }
+    btn.disabled = false; return;
+  }
+  if (ev.target.id==='kodForm') {
+    ev.preventDefault();
+    const kod = normKod($('#k-kod').value), tel = $('#k-tel').value.trim();
+    if (!kod || !tel || !$('#k-gdpr').checked) { toast(TZ[L].chyba); return; }
+    const btn = ev.target.querySelector('button[type=submit]'); btn.disabled = true;
+    try {
+      let k = null; try { const s = await db.doc('kody/'+kod).get(); k = s.exists ? s.data() : null; } catch (e) { console.warn(e); }
+      if (!k) { toast(t.kodBad); btn.disabled = false; return; }
+      if (k.uid && k.uid !== S.user.uid) { toast(t.kodUsed); btn.disabled = false; return; }
+      const now = new Date().toISOString();
+      await db.batch([
+        ['set', 'uzivatele/'+S.user.uid, {stav:'schvaleno', kod, osobaId:k.osobaId, adresaId:k.adresaId, jmeno:k.jmeno||'', email:S.user.email, telefon:tel, jazyk:L, gdpr:now, vytvoreno:now, schvaleno:now, cesta:'kod'}],
+        ['update', 'kody/'+kod, {uid:S.user.uid}]
+      ]);
+      try { await db.doc('kontakty/'+k.osobaId).set({email:S.user.email, telefon:tel, jazyk:L}); } catch (e) { console.warn(e); }
+      toast(t.kodOk);
+    } catch (e) { console.error(e); toast(/permission/.test(e.code||'') ? t.kodUsed : TZ[L].chyba); }
     btn.disabled = false; return;
   }
   if (ev.target.id==='uzForm') {
