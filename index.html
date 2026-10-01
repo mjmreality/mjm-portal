@@ -2134,14 +2134,7 @@ function viewPhase(){
   else if (S.phase==='verify') body = head(t.verifyH) + `<section class="card"><p>${esc(t.verifyP(S.user?.email||''))}</p><p class="acct">${t.spam}</p>
       <div class="row"><button type="button" class="primary" data-auth="reloaded">${t.verified}</button><button type="button" data-auth="resend">${t.resend}</button></div></section>`;
   else if (S.phase==='register') body = head(t.regH) + `${S.me && S.me.stav==='zamitnuto' ? `<div class="warnbox">${t.rejected}${S.me.duvodZamitnuti?` ${esc(S.me.duvodZamitnuti)}`:''}</div>` : ''}
-    <section class="card"><h3>${t.kodH}</h3><p class="acct">${t.kodP}</p>
-      <form class="form" id="kodForm">
-        <label class="f" for="k-kod">${t.kod}<input id="k-kod" autocapitalize="characters" autocomplete="off" placeholder="${t.kodPh}" required style="font:600 18px/1.2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em"></label>
-        <label class="f" for="k-tel">${TZ[L].tel}<input id="k-tel" type="tel" autocomplete="tel" required></label>
-        ${gdprDetails(L, L==='en'?'Read: how we process your personal data':'Přečíst: jak zpracováváme vaše osobní údaje')}
-        <label class="radio"><input type="checkbox" id="k-gdpr" required><span>${L==='en'?'I have read the information on personal data processing.':'Seznámil(a) jsem se s informacemi o zpracování osobních údajů.'}</span></label>
-        <button class="primary" type="submit">${t.kodSend}</button></form></section>
-    <details class="card"><summary style="cursor:pointer;font-weight:600;color:var(--accent)">${t.bezKodu}</summary><p class="acct" style="margin-top:8px">${t.bezKoduP}</p><p class="acct">${t.regP}</p>${uzForm(L)}</details>`;
+    <section class="card"><p class="acct">${t.regP}</p>${uzForm(L)}</section>`;
   else if (S.phase==='pending') body = head(t.pendingH) + `<section class="card" style="border-color:var(--warn)"><p>${t.pendingP}</p></section>${infoCard(L)}${faqCard(L)}${odkazyCard(L)}`;
   return `<div class="phone" lang="${L}">${body}</div>`;
 }
@@ -2192,11 +2185,11 @@ function viewUzivatele(){
         ${S.open['uz'+u._id]?`<div class="row" style="grid-column:1/-1"><input id="uzd-${u._id}" placeholder="Důvod zamítnutí, uvidí ho nájemník" style="flex:1 1 240px"><button class="danger" data-uz="no" data-id="${u._id}">Potvrdit zamítnutí</button></div>`:''}
       </div></div>`;
   };
-  return `<div class="flow" style="margin-bottom:12px"><span>Nájemník zadá přístupový kód</span>→<span>Aplikace ho sama přiřadí</span>→<span>Hned vidí svoje údaje</span></div>
-    <p class="note" style="margin-bottom:12px">Kdo kód nemá, zaregistruje se bez něj a objeví se tady. Takovou registraci potvrďte, jen když si jste jistá, kdo to je (třeba po telefonu).</p>
+  return `<div class="flow" style="margin-bottom:12px"><span>Nájemník se zaregistruje</span>→<span>Vy vyberete, kdo to je v přehledu</span>→<span>Potvrdíte</span>→<span>Uvidí svoje údaje a QR kód</span></div>
+    <p class="note" style="margin-bottom:12px">Potvrďte jen toho, o kom víte, kdo to je. Když si nejste jistá, zavolejte na telefon z registrace.</p>
     <section class="panel"><h2>Čeká na potvrzení <span class="pill mute">${ceka.length}</span></h2><p class="note">Aplikace sama navrhne, ke komu z přehledu registrace patří (podle jména a adresy). Zkontrolujte to a potvrďte.</p>${ceka.map(item).join('') || '<p class="acct">Nikdo nečeká.</p>'}</section>
     <details class="panel" open><summary style="cursor:pointer"><h2 style="display:inline">Potvrzení nájemníci</h2> <span class="pill mute">${hotovo.length}</span></summary>
-      ${hotovo.map(u=>{ const o = S.osoby.find(x=>x.id===u.osobaId) || {}; return `<div class="li"><span><b>${esc(o.jmeno||u.jmeno)}</b><br><span class="acct">${esc(adresaOf(o).adresa||'')} · ${esc(u.email||'')} · ${u.cesta==='kod'?'přes kód':'potvrzeno ručně'} ${fDate(u.schvaleno)}</span></span><span class="r"><button class="ghost danger" data-uz="zrusit" data-id="${u._id}">Zrušit přístup</button></span></div>`; }).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
+      ${hotovo.map(u=>{ const o = S.osoby.find(x=>x.id===u.osobaId) || {}; return `<div class="li"><span><b>${esc(o.jmeno||u.jmeno)}</b><br><span class="acct">${esc(adresaOf(o).adresa||'')} · ${esc(u.email||'')} · ${fDate(u.schvaleno)}</span></span><span class="r"><button class="ghost danger" data-uz="zrusit" data-id="${u._id}">Zrušit přístup</button></span></div>`; }).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
     ${zam.length?`<details class="panel"><summary style="cursor:pointer"><h2 style="display:inline">Zamítnuté</h2> <span class="pill mute">${zam.length}</span></summary>${zam.map(u=>`<div class="li"><span><b>${esc(u.jmeno)}</b><br><span class="acct">${esc(u.email||'')}${u.duvodZamitnuti?` · ${esc(u.duvodZamitnuti)}`:''}</span></span></div>`).join('')}</details>`:''}`;
 }
 async function uzSchvalit(uid){
@@ -2229,13 +2222,12 @@ function viewNajemnici(){
       <div><b>${all.filter(o=>o.plati).length}</b><span>platí</span></div>
       <div><b>${all.filter(o=>o.plati && !(+o.predpis>0)).length}</b><span>platí, ale nemá předpis</span></div></div>
     <p class="note" style="margin-bottom:10px">Předpis a „platí“ můžete měnit rovnou tady, uloží se po opuštění políčka. Nájemník uvidí částku a QR kód, jen když platí a má předpis. Dluhy ve zkušební verzi nevidí.</p>
-    <div class="row" style="margin-bottom:10px"><input type="search" id="q" placeholder="Hledat jméno, adresu, VS, kód nebo e-mail" value="${esc(S.q)}" aria-label="Hledat" style="max-width:420px"><button data-kod="csv">Stáhnout tabulku kódů</button></div>
-    <p class="note" style="margin-bottom:10px">Přístupový kód nájemník zadá při registraci a aplikace ho sama přiřadí ke správnému člověku. Každý kód jde použít jen jednou. Když ho někdo ztratí nebo ho použil někdo cizí, klikněte na „Nový“ a u potvrzeného účtu v Registracích „Zrušit přístup“.</p>
-    <div class="panel" style="padding:0"><div class="tbl"><table><thead><tr><th>Jméno</th><th>Adresa</th><th>VS</th><th>Platí</th><th>Předpis Kč</th><th>Přístupový kód</th><th>Účet v aplikaci</th><th>Telefon</th></tr></thead><tbody>
+    <div class="row" style="margin-bottom:10px"><input type="search" id="q" placeholder="Hledat jméno, adresu, VS, kód nebo e-mail" value="${esc(S.q)}" aria-label="Hledat" style="max-width:420px"></div>
+
+    <div class="panel" style="padding:0"><div class="tbl"><table><thead><tr><th>Jméno</th><th>Adresa</th><th>VS</th><th>Platí</th><th>Předpis Kč</th><th>Účet v aplikaci</th><th>Telefon</th></tr></thead><tbody>
     ${list.map(o=>{const kk = kontakt(o.id); return `<tr><td><b>${esc(o.jmeno)}</b></td><td class="acct">${esc(adresaOf(o).adresa||'')}</td><td>${o.vs?esc(o.vs):'<span class="pill warn">chybí</span>'}</td>
       <td><input type="checkbox" data-osf="plati" data-id="${o.id}" aria-label="Platí ${esc(o.jmeno)}"${o.plati?' checked':''} style="width:auto"></td>
       <td><input type="number" step="1" min="0" data-osf="predpis" data-id="${o.id}" value="${+o.predpis||''}" aria-label="Předpis ${esc(o.jmeno)}" style="width:100px"></td>
-      <td style="white-space:nowrap">${o.kod?`<code style="font:600 13px ui-monospace,Menlo,Consolas,monospace">${fmtKod(o.kod)}</code>${S.kody[o.kod]&&S.kody[o.kod].uid?' <span class="pill ok">použit</span>':''}`:'<span class="pill mute">—</span>'} <button class="ghost" data-kod="novy" data-id="${o.id}" title="Vytvořit nový kód, starý přestane platit">Nový</button></td>
       <td>${maUcet(o)?`<span class="pill ok">ano</span> <span class="acct">${esc(kk.email||o.email||'')}</span>`:'<span class="pill mute">zatím ne</span>'}</td>
       <td class="acct">${esc(kk.telefon||'')}</td></tr>`;}).join('')}
     </tbody></table></div></div>`;
