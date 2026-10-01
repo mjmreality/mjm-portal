@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Návod pro nájemníky MJM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1f2a2e; --muted:#5d6a6e; --line:#e2ddd2;
+  --accent:#1f6f5c; --accent-ink:#ffffff; --accent-soft:#e3f0ec;
+  --warn:#9a5b00; --warn-soft:#fbf0dc; --bad:#a3322a; --bad-soft:#fbe6e3;
+  --chip:#eef0ec; --chip-line:#c9cfc6;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141a1b; --card:#1c2426; --ink:#e7ecea; --muted:#9fb0ad; --line:#2d3739;
+  --accent:#5cc2a6; --accent-ink:#0d1b17; --accent-soft:#1d3530;
+  --warn:#e9b25c; --warn-soft:#352a17; --bad:#f0897f; --bad-soft:#3a2120;
+  --chip:#253033; --chip-line:#3b4a4d; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#141a1b; --card:#1c2426; --ink:#e7ecea; --muted:#9fb0ad; --line:#2d3739;
+  --accent:#5cc2a6; --accent-ink:#0d1b17; --accent-soft:#1d3530;
+  --warn:#e9b25c; --warn-soft:#352a17; --bad:#f0897f; --bad-soft:#3a2120;
+  --chip:#253033; --chip-line:#3b4a4d; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+div[lang]{min-width:0;width:100%}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:20px 64px;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{line-height:1.25;text-wrap:balance;margin:0}
+h1{font-size:1.75rem}
+h2{font-size:1.3rem}
+h3{font-size:1.08rem}
+p{margin:0}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:6px}
+a{color:var(--accent);font-weight:700;overflow-wrap:anywhere}
+
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.brand{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lang{display:flex;border:1px solid var(--chip-line);border-radius:999px;overflow:hidden}
+.lang button{font:inherit;font-size:.95rem;font-weight:700;padding:6px 16px;border:0;background:transparent;color:var(--ink);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.intro{display:flex;flex-direction:column;gap:10px}
+.lead{color:var(--muted)}
+.url{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--accent-soft);border-radius:12px;padding:12px 14px}
+.url code{font:700 1rem/1.4 ui-monospace,Menlo,Consolas,monospace;overflow-wrap:anywhere;flex:1 1 220px;min-width:0}
+.copy{font:inherit;font-size:.9rem;font-weight:700;border:1px solid var(--accent);color:var(--accent);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}
+
+nav.toc{display:flex;flex-wrap:wrap;gap:8px}
+nav.toc a{font-weight:700;font-size:.92rem;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--ink)}
+
+.part{display:flex;flex-direction:column;gap:12px}
+.part > h2{display:flex;gap:10px;align-items:baseline;padding-top:6px;border-top:2px solid var(--ink)}
+.part > h2 small{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+.step{display:grid;grid-template-columns:2.2rem 1fr;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.step .n{width:2.2rem;height:2.2rem;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.step .b{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+.fn{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.fn h3{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.fn h3 .ic{font-size:1.15rem;width:1.6rem;text-align:center}
+
+.btn{display:inline-block;font-weight:700;font-size:.92em;background:var(--chip);border:1px solid var(--chip-line);border-radius:7px;padding:0 7px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.note{background:var(--warn-soft);border-left:4px solid var(--warn);border-radius:8px;padding:10px 12px}
+.alarm{background:var(--bad-soft);border-left:4px solid var(--bad);border-radius:8px;padding:10px 12px}
+.ok{background:var(--accent-soft);border-left:4px solid var(--accent);border-radius:8px;padding:10px 12px}
+.muted{color:var(--muted);font-size:.95rem}
+.tag{font-size:.75rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--warn);border:1px solid var(--warn);border-radius:6px;padding:0 6px}
+
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+details summary{font-weight:700;cursor:pointer}
+details p{margin-top:6px}
+.foot{color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top">
+    <a class="brand" href="./" style="text-decoration:none">← MJM · Aplikace / App</a>
+    <div class="lang" role="group" aria-label="Jazyk / Language">
+      <button type="button" data-l="cs" aria-pressed="true">Čeština</button>
+      <button type="button" data-l="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+
+<!-- ======================= ČESKY ======================= -->
+<div lang="cs" class="wrap" style="padding:0;gap:18px">
+  <header class="intro">
+    <h1>Aplikace pro nájemníky: návod</h1>
+    <p class="lead">Jak se přihlásit, zaregistrovat a co všechno v aplikaci najdete. Aplikace funguje v telefonu i v počítači, nic se nestahuje z obchodu.</p>
+    <div class="url"><code>mjmreality.github.io/mjm-portal</code><button class="copy" type="button" data-copy="https://mjmreality.github.io/mjm-portal/">Kopírovat</button></div>
+    <p><a href="https://mjmreality.github.io/mjm-portal/" target="_blank" rel="noopener">Otevřít aplikaci →</a></p>
+  </header>
+
+  <nav class="toc" aria-label="Obsah">
+    <a href="#cs-start">Než začnete</a><a href="#cs-login">Přihlášení</a><a href="#cs-app">Co v aplikaci najdete</a><a href="#cs-help">Problémy</a>
+  </nav>
+
+  <section class="part" id="cs-start">
+    <h2><small>Část 1</small> Než začnete</h2>
+    <div class="fn">
+      <p>Připravte si:</p>
+      <ul>
+        <li>telefon s internetem,</li>
+        <li>svůj <b>e-mail</b> (nebo účet Google, např. Gmail),</li>
+        <li>svoje <b>telefonní číslo</b>,</li>
+        <li>adresu, kde bydlíte,</li>
+        <li><b>pas</b> – po potvrzení registrace do aplikace opíšete jeho údaje.</li>
+      </ul>
+      <p class="muted">Každý nájemník má svůj vlastní účet. Nepoužívejte účet kamaráda ani spolubydlícího.</p>
+    </div>
+  </section>
+
+  <section class="part" id="cs-login">
+    <h2><small>Část 2</small> Přihlášení a registrace</h2>
+
+    <div class="step"><span class="n">1</span><div class="b">
+      <h3>Otevřete aplikaci</h3>
+      <p>V telefonu otevřete prohlížeč (Chrome, Safari) a napište adresu <b>mjmreality.github.io/mjm-portal</b>.</p>
+      <p>Nahoře si můžete přepnout jazyk <span class="btn">CZ</span> / <span class="btn">EN</span>.</p>
+      <p class="muted"><b>Tip:</b> Uložte si aplikaci na plochu telefonu. Android (Chrome): menu ⋮ → <span class="btn">Přidat na plochu</span>. iPhone (Safari): tlačítko Sdílet → <span class="btn">Přidat na plochu</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">2</span><div class="b">
+      <h3>Vytvořte si účet</h3>
+      <p>Vyberte <b>jednu</b> ze dvou možností:</p>
+      <p><b>A) S Googlem (nejjednodušší):</b> klikněte na <span class="btn">Přihlásit přes Google</span> a vyberte svůj Gmail. Hotovo, pokračujte krokem 4.</p>
+      <p><b>B) E-mailem a heslem:</b></p>
+      <ol>
+        <li>Klikněte na <span class="btn">Nemáte účet? Vytvořit účet</span>.</li>
+        <li>Napište svůj e-mail.</li>
+        <li>Vymyslete si heslo (aspoň 6 znaků) a napište ho dvakrát.</li>
+        <li>Klikněte na <span class="btn">Vytvořit účet</span>.</li>
+      </ol>
+      <p class="note">Heslo si zapište nebo zapamatujte. Budete ho potřebovat při každém přihlášení na novém telefonu.</p>
+    </div></div>
+
+    <div class="step"><span class="n">3</span><div class="b">
+      <h3>Potvrďte e-mail <span class="tag">jen u možnosti B</span></h3>
+      <ol>
+        <li>Otevřete svoji e-mailovou schránku. Přišel vám e-mail s odkazem.</li>
+        <li>Klikněte na odkaz v e-mailu.</li>
+        <li>Vraťte se do aplikace a klikněte na <span class="btn">Už jsem potvrdil(a)</span>.</li>
+      </ol>
+      <p class="note">E-mail nepřišel? Podívejte se do složky <b>Spam</b> (nežádoucí pošta). Pokud tam není, klikněte na <span class="btn">Poslat e-mail znovu</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">4</span><div class="b">
+      <h3>Vyplňte registraci</h3>
+      <ul>
+        <li><b>Jméno a příjmení</b> – stejně jako v pasu.</li>
+        <li><b>Adresa, kde bydlíte</b> – vyberte ze seznamu.</li>
+        <li><b>Telefon</b> – číslo, na kterém vás zastihneme (ideálně i WhatsApp).</li>
+        <li><b>Proč se registrujete</b> – vyberte, co platí pro vás:
+          <ul>
+            <li><i>Jen se registruji, za ubytování nic neplatím</i> – ubytování vám platí zaměstnavatel. <b>Většina nájemníků vybere tohle.</b></li>
+            <li><i>Bydlím v nájemním bytě MJM</i></li>
+            <li><i>Jsem na mateřské nebo rodičovské</i>, <i>Mám trvalý pobyt…</i>, <i>Bydlím v bytě sám / sama</i>, <i>Jiný důvod…</i> – když za ubytování platíte sami.</li>
+          </ul></li>
+        <li><b>Od kdy</b> – od kdy bydlíte na adrese (nebo od kdy platíte sami).</li>
+        <li><b>Zaměstnavatel</b> a <b>poznámka</b> – nepovinné.</li>
+        <li>Přečtěte si <b>Ochranu osobních údajů</b> a zaškrtněte souhlas.</li>
+      </ul>
+      <p>Klikněte na <span class="btn">Odeslat registraci</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">5</span><div class="b">
+      <h3>Počkejte na potvrzení</h3>
+      <p>Uvidíte nápis <b>„Čekáme na potvrzení“</b>. Správkyně zkontroluje, že na adrese opravdu bydlíte, a vaši registraci potvrdí – obvykle do 2 pracovních dnů.</p>
+      <p>Mezitím si můžete přečíst pravidla, časté otázky a užitečné odkazy.</p>
+      <p class="ok">Až vás správkyně potvrdí, stačí aplikaci znovu otevřít (nebo obnovit stránku) a uvidíte všechno.</p>
+    </div></div>
+
+    <div class="step"><span class="n">6</span><div class="b">
+      <h3>Příště už se jen přihlásíte</h3>
+      <p>Otevřete aplikaci a klikněte na <span class="btn">Přihlásit přes Google</span>, nebo napište e-mail a heslo a klikněte na <span class="btn">Přihlásit se</span>. Telefon si vás obvykle pamatuje, takže se nemusíte přihlašovat pokaždé.</p>
+      <p>Zapomněli jste heslo? Napište e-mail a klikněte na <span class="btn">Zapomněl/a jsem heslo</span>. Přijde vám e-mail s odkazem na nové heslo.</p>
+    </div></div>
+  </section>
+
+  <section class="part" id="cs-app">
+    <h2><small>Část 3</small> Co v aplikaci najdete</h2>
+    <p class="muted">Všechno je na jedné stránce pod sebou. Stačí posouvat dolů.</p>
+
+    <div class="fn"><h3><span class="ic">💳</span>Platba a QR kód</h3>
+      <p><b>Jen pro ty, kdo za ubytování platí sami.</b> Uvidíte, kolik máte měsíčně platit, číslo účtu, <b>variabilní symbol</b> a QR kód.</p>
+      <p>Otevřete bankovní aplikaci, zvolte platbu QR kódem a namiřte telefon na kód. Všechno se vyplní samo. Plaťte <b>do 15. dne v měsíci</b>.</p>
+      <p class="note">Vždy používejte variabilní symbol z aplikace. Bez něj nepoznáme, od koho platba je.</p>
+      <p class="muted">Pokud uvidíte „Váš platební předpis připravujeme“, ještě nemusíte nic platit. Ozveme se.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🛂</span>Údaje z pasu <span class="tag">povinné</span></h3>
+      <p>Ubytované cizince musíme hlásit cizinecké policii. Opište údaje z pasu: číslo pasu, platnost, datum narození, státní občanství atd.</p>
+      <p>Když dostanete <b>nový pas</b>, klikněte na <span class="btn">Mám nový pas</span> a zadejte nové číslo a platnost. Uděláte to hned, jak pas dostanete.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📷</span>Kontrola bytu – každý měsíc <span class="tag">povinné od října 2026</span></h3>
+      <p>Jednou za měsíc, <b>do 10. dne</b>, pošlete:</p>
+      <ul>
+        <li>fotky <b>kuchyně</b> (1–2 fotky celé místnosti),</li>
+        <li>fotky <b>koupelny</b> (1–2 fotky),</li>
+        <li>stavy <b>vodoměrů</b> – studená a teplá voda v m³ (fotka vodoměrů je nepovinná),</li>
+        <li>případně co je v bytě rozbité.</li>
+      </ul>
+      <p>Stačí <b>jeden člověk za celý byt</b>. Ostatní v aplikaci uvidí, že je kontrola hotová. Domluvte se se spolubydlícími, kdo ji pošle.</p>
+      <p class="alarm">Když kontrolu do 10. nikdo z bytu nepošle, aplikace se <b>zamkne</b> všem v bytě a pustí vás dál, až kontrolu nahrajete.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📢</span>Upozornění a nástěnka</h3>
+      <p>Když přijde důležitá zpráva (např. přijde technik, odečet vody, oprava), objeví se v aplikaci okno. Pokud máte být doma, klikněte na <span class="btn">Budu doma</span>, nebo <span class="btn">Nemůžu, ozvu se</span>. U ostatních zpráv stačí <span class="btn">Rozumím</span>.</p>
+      <p>Na <b>Nástěnce</b> najdete zprávy pro váš dům nebo pro všechny nájemníky.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🔧</span>Nahlásit závadu</h3>
+      <p>Něco nefunguje? Vyberte, co je potřeba, popište závadu, napište kde přesně a kdy jste doma. Přidejte až 3 fotky – hodně to pomůže. Klikněte na <span class="btn">Odeslat ke schválení</span>.</p>
+      <p>V aplikaci pak vidíte, v jakém stavu je vaše hlášení.</p>
+      <p class="alarm"><b>Havárie</b> (teče voda, jiskří elektřina): vyberte naléhavost <span class="btn">Havárie</span>, správkyně dostane zprávu hned. Při zápachu plynu volejte <b>1239</b>, při ohrožení života <b>112</b>.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🏠</span>Samostatné bydlení</h3>
+      <p>Chcete bydlet v bytě sami nebo s rodinou? Zapište se na <b>seznam zájemců</b>. Když se uvolní byt, přijde vám v aplikaci nabídka s adresou, cenou a datem, od kdy je volný. Na nabídku můžete odpovědět přímo v aplikaci.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📅</span>Schůzka se správkyní</h3>
+      <p>Vyberte téma (ubytování, platby, stěhování, něco jiného), den a volný čas. Schůzku můžete v aplikaci také zrušit.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📦</span>Stěhování, potvrzení, volné místo</h3>
+      <ul>
+        <li><b>Stěhování</b> – odstěhujete se, nastěhujete, nebo se přesouváte na jinou adresu? Dejte vědět a zvolte datum.</li>
+        <li><b>Potvrzení o ubytování</b> – potřebujete ho pro úřad? Požádejte v aplikaci, dáme vědět, až bude připravené.</li>
+        <li><b>Volná postel nebo pokoj</b> – víte, že se u vás uvolnilo místo? Nahlaste to.</li>
+      </ul>
+    </div>
+
+    <div class="fn"><h3><span class="ic">💧</span>Kalkulačka vody</h3>
+      <p>Opište dva stavy vodoměrů (např. ze začátku a konce měsíce) a aplikace spočítá, kolik vody jste spotřebovali a přibližně kolik to stojí.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📘</span>Informace</h3>
+      <p>Na konci stránky najdete <b>důležité kontakty</b>, <b>domovní řád</b>, pravidla pro ubytované, ochranu osobních údajů, <b>časté otázky</b> a užitečné odkazy.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🚪</span>Odhlášení</h3>
+      <p>Tlačítko <span class="btn">Odhlásit</span> je nahoře. Odhlaste se, když jste aplikaci otevřeli na cizím telefonu.</p>
+    </div>
+  </section>
+
+  <section class="part" id="cs-help">
+    <h2><small>Část 4</small> Když něco nejde</h2>
+    <details><summary>Píše to „Špatný e-mail nebo heslo“</summary><p>Zkontrolujte, že e-mail píšete bez mezery a správně. Pokud jste účet zakládali přes Google, použijte tlačítko <span class="btn">Přihlásit přes Google</span>. Jinak klikněte na <span class="btn">Zapomněl/a jsem heslo</span>.</p></details>
+    <details><summary>Píše to „Tento e-mail už má účet“</summary><p>Účet už máte. Klikněte na <span class="btn">Už máte účet? Přihlásit se</span>.</p></details>
+    <details><summary>Nepřišel mi potvrzovací e-mail</summary><p>Podívejte se do Spamu. Pak klikněte na <span class="btn">Poslat e-mail znovu</span>. Nebo se přihlaste přes Google – tam se nic potvrzovat nemusí.</p></details>
+    <details><summary>Pořád čekám na potvrzení</summary><p>Potvrzení obvykle trvá do 2 pracovních dnů. Pokud to trvá déle, napište správkyni na WhatsApp. Zkontrolujte také, že jste vybrali správnou adresu.</p></details>
+    <details><summary>Registrace byla zamítnuta</summary><p>Uvidíte důvod. Opravte údaje (často je to špatná adresa nebo jméno) a pošlete registraci znovu.</p></details>
+    <details><summary>Aplikace se nenačte</summary><p>Obnovte stránku nebo zkuste jiný prohlížeč (Chrome, Safari). Zkontrolujte, že máte internet.</p></details>
+    <details><summary>Aplikace je zamčená</summary><p>Váš byt neposlal kontrolu bytu do 10. dne. Pošlete fotky kuchyně, koupelny a stavy vodoměrů a aplikace se odemkne.</p></details>
+  </section>
+
+  <p class="foot">MJM rodinná realitní a personální agentura s.r.o. · Školní 645, 432 01 Kadaň. S čímkoli si nevíte rady, napište správkyni na WhatsApp.</p>
+</div>
+
+<!-- ======================= ENGLISH ======================= -->
+<div lang="en" class="wrap" style="padding:0;gap:18px" hidden>
+  <header class="intro">
+    <h1>Tenant app: how to use it</h1>
+    <p class="lead">How to sign in, register and what you will find in the app. It works on your phone and computer, nothing to download from a store.</p>
+    <div class="url"><code>mjmreality.github.io/mjm-portal</code><button class="copy" type="button" data-copy="https://mjmreality.github.io/mjm-portal/">Copy</button></div>
+    <p><a href="https://mjmreality.github.io/mjm-portal/" target="_blank" rel="noopener">Open the app →</a></p>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#en-start">Before you start</a><a href="#en-login">Sign in</a><a href="#en-app">What is in the app</a><a href="#en-help">Problems</a>
+  </nav>
+
+  <section class="part" id="en-start">
+    <h2><small>Part 1</small> Before you start</h2>
+    <div class="fn">
+      <p>You will need:</p>
+      <ul>
+        <li>a phone with internet,</li>
+        <li>your <b>email</b> (or a Google account, e.g. Gmail),</li>
+        <li>your <b>phone number</b>,</li>
+        <li>the address where you live,</li>
+        <li>your <b>passport</b> – after your registration is confirmed, you will copy its details into the app.</li>
+      </ul>
+      <p class="muted">Every tenant has their own account. Do not use the account of a friend or flatmate.</p>
+    </div>
+  </section>
+
+  <section class="part" id="en-login">
+    <h2><small>Part 2</small> Sign in and register</h2>
+
+    <div class="step"><span class="n">1</span><div class="b">
+      <h3>Open the app</h3>
+      <p>On your phone open the browser (Chrome, Safari) and type <b>mjmreality.github.io/mjm-portal</b>.</p>
+      <p>At the top you can switch the language <span class="btn">CZ</span> / <span class="btn">EN</span>.</p>
+      <p class="muted"><b>Tip:</b> Add the app to your home screen. Android (Chrome): menu ⋮ → <span class="btn">Add to Home screen</span>. iPhone (Safari): Share button → <span class="btn">Add to Home Screen</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">2</span><div class="b">
+      <h3>Create an account</h3>
+      <p>Choose <b>one</b> of two options:</p>
+      <p><b>A) With Google (easiest):</b> tap <span class="btn">Sign in with Google</span> and choose your Gmail. Done, go to step 4.</p>
+      <p><b>B) With email and password:</b></p>
+      <ol>
+        <li>Tap <span class="btn">No account? Create one</span>.</li>
+        <li>Type your email.</li>
+        <li>Choose a password (at least 6 characters) and type it twice.</li>
+        <li>Tap <span class="btn">Create account</span>.</li>
+      </ol>
+      <p class="note">Write down or remember your password. You will need it every time you sign in on a new phone.</p>
+    </div></div>
+
+    <div class="step"><span class="n">3</span><div class="b">
+      <h3>Confirm your email <span class="tag">option B only</span></h3>
+      <ol>
+        <li>Open your mailbox. You received an email with a link.</li>
+        <li>Tap the link in the email.</li>
+        <li>Go back to the app and tap <span class="btn">I have confirmed it</span>.</li>
+      </ol>
+      <p class="note">No email? Check the <b>Spam</b> (junk) folder. If it is not there, tap <span class="btn">Send the email again</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">4</span><div class="b">
+      <h3>Fill in the registration</h3>
+      <ul>
+        <li><b>First and last name</b> – the same as in your passport.</li>
+        <li><b>Address where you live</b> – choose from the list.</li>
+        <li><b>Phone</b> – a number where we can reach you (ideally WhatsApp too).</li>
+        <li><b>Why are you registering</b> – choose what is true for you:
+          <ul>
+            <li><i>I am only registering, I do not pay for housing</i> – your employer pays for your housing. <b>Most tenants choose this.</b></li>
+            <li><i>I live in an MJM rental flat</i></li>
+            <li><i>I am on maternity or parental leave</i>, <i>I have permanent residence…</i>, <i>I live in the flat alone</i>, <i>Another reason…</i> – if you pay for housing yourself.</li>
+          </ul></li>
+        <li><b>Since when</b> – since when you live at the address (or since when you pay yourself).</li>
+        <li><b>Employer</b> and <b>note</b> – optional.</li>
+        <li>Read the <b>Personal data protection</b> and tick the consent box.</li>
+      </ul>
+      <p>Tap <span class="btn">Send registration</span>.</p>
+    </div></div>
+
+    <div class="step"><span class="n">5</span><div class="b">
+      <h3>Wait for confirmation</h3>
+      <p>You will see <b>“Waiting for confirmation”</b>. The manager checks that you really live at the address and confirms your registration – usually within 2 working days.</p>
+      <p>Meanwhile you can read the rules, FAQ and useful links.</p>
+      <p class="ok">When the manager confirms you, just open the app again (or refresh the page) and you will see everything.</p>
+    </div></div>
+
+    <div class="step"><span class="n">6</span><div class="b">
+      <h3>Next time you just sign in</h3>
+      <p>Open the app and tap <span class="btn">Sign in with Google</span>, or type your email and password and tap <span class="btn">Sign in</span>. Your phone usually remembers you, so you do not have to sign in every time.</p>
+      <p>Forgot your password? Type your email and tap <span class="btn">I forgot my password</span>. You will get an email with a link to set a new one.</p>
+    </div></div>
+  </section>
+
+  <section class="part" id="en-app">
+    <h2><small>Part 3</small> What you will find in the app</h2>
+    <p class="muted">Everything is on one page. Just scroll down.</p>
+
+    <div class="fn"><h3><span class="ic">💳</span>Payment and QR code</h3>
+      <p><b>Only for those who pay for housing themselves.</b> You will see how much to pay each month, the account number, the <b>variable symbol</b> and a QR code.</p>
+      <p>Open your banking app, choose “pay by QR code” and point the phone at the code. Everything fills in by itself. Pay <b>by the 15th of the month</b>.</p>
+      <p class="note">Always use the variable symbol from the app. Without it we cannot tell who the payment is from.</p>
+      <p class="muted">If you see “We are preparing your payment order”, you do not have to pay anything yet. We will contact you.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🛂</span>Passport details <span class="tag">required</span></h3>
+      <p>We must report accommodated foreigners to the foreign police. Copy your passport details: passport number, expiry date, date of birth, nationality etc.</p>
+      <p>When you get a <b>new passport</b>, tap <span class="btn">I have a new passport</span> and enter the new number and expiry date. Do it as soon as you get the passport.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📷</span>Monthly flat check <span class="tag">required from October 2026</span></h3>
+      <p>Once a month, <b>by the 10th</b>, send:</p>
+      <ul>
+        <li>photos of the <b>kitchen</b> (1–2 photos of the whole room),</li>
+        <li>photos of the <b>bathroom</b> (1–2 photos),</li>
+        <li><b>water meter</b> readings – cold and hot water in m³ (a photo of the meters is optional),</li>
+        <li>anything broken in the flat, if there is something.</li>
+      </ul>
+      <p><b>One person per flat</b> is enough. The others will see in the app that the check is done. Agree with your flatmates who will send it.</p>
+      <p class="alarm">If nobody from the flat sends the check by the 10th, the app <b>locks</b> for everyone in the flat and opens again once the check is uploaded.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📢</span>Notices and notice board</h3>
+      <p>When an important message arrives (e.g. a technician is coming, water reading, a repair), a window opens in the app. If you need to be at home, tap <span class="btn">I will be home</span> or <span class="btn">I cannot, I will get in touch</span>. For other messages just tap <span class="btn">Got it</span>.</p>
+      <p>On the <b>Notice board</b> you will find messages for your building or for all tenants.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🔧</span>Report a defect</h3>
+      <p>Something does not work? Choose what is needed, describe the problem, where exactly it is and when you are at home. Add up to 3 photos – it helps a lot. Tap <span class="btn">Send for approval</span>.</p>
+      <p>In the app you can then see the status of your report.</p>
+      <p class="alarm"><b>Emergency</b> (water leaking, sparking electricity): choose urgency <span class="btn">Emergency</span>, the manager gets a message right away. If you smell gas call <b>1239</b>, if a life is in danger call <b>112</b>.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🏠</span>Living on your own</h3>
+      <p>Do you want to live in a flat alone or with your family? Join the <b>waiting list</b>. When a flat becomes free, you will get an offer in the app with the address, price and the date it is available. You can reply to the offer right in the app.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📅</span>Meeting with the manager</h3>
+      <p>Choose a topic (housing, payments, moving, something else), a day and a free time. You can also cancel the meeting in the app.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📦</span>Moving, confirmation, free bed</h3>
+      <ul>
+        <li><b>Moving</b> – moving out, moving in, or moving to another address? Let us know and choose a date.</li>
+        <li><b>Confirmation of accommodation</b> – need it for an office? Ask in the app, we will tell you when it is ready.</li>
+        <li><b>Free bed or room</b> – do you know a place became free in your flat? Report it.</li>
+      </ul>
+    </div>
+
+    <div class="fn"><h3><span class="ic">💧</span>Water calculator</h3>
+      <p>Enter two water meter readings (e.g. from the start and end of the month) and the app calculates how much water you used and roughly how much it costs.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">📘</span>Information</h3>
+      <p>At the bottom of the page you will find <b>important contacts</b>, <b>house rules</b>, rules for accommodated people, personal data protection, <b>FAQ</b> and useful links.</p>
+    </div>
+
+    <div class="fn"><h3><span class="ic">🚪</span>Sign out</h3>
+      <p>The <span class="btn">Sign out</span> button is at the top. Sign out if you used the app on someone else's phone.</p>
+    </div>
+  </section>
+
+  <section class="part" id="en-help">
+    <h2><small>Part 4</small> When something does not work</h2>
+    <details><summary>It says “Wrong email or password”</summary><p>Check that the email is typed correctly, without spaces. If you created the account with Google, use <span class="btn">Sign in with Google</span>. Otherwise tap <span class="btn">I forgot my password</span>.</p></details>
+    <details><summary>It says “This email already has an account”</summary><p>You already have an account. Tap <span class="btn">Already have an account? Sign in</span>.</p></details>
+    <details><summary>I did not get the confirmation email</summary><p>Check Spam. Then tap <span class="btn">Send the email again</span>. Or sign in with Google – there is nothing to confirm.</p></details>
+    <details><summary>I am still waiting for confirmation</summary><p>Confirmation usually takes up to 2 working days. If it takes longer, message the manager on WhatsApp. Also check that you chose the right address.</p></details>
+    <details><summary>My registration was rejected</summary><p>You will see the reason. Correct your details (often a wrong address or name) and send the registration again.</p></details>
+    <details><summary>The app does not load</summary><p>Refresh the page or try another browser (Chrome, Safari). Check that you have internet.</p></details>
+    <details><summary>The app is locked</summary><p>Your flat did not send the flat check by the 10th. Send kitchen and bathroom photos and water meter readings and the app will unlock.</p></details>
+  </section>
+
+  <p class="foot">MJM rodinná realitní a personální agentura s.r.o. · Školní 645, 432 01 Kadaň. If you are not sure about anything, message the manager on WhatsApp.</p>
+</div>
+</div>
+
+<script>
+(function(){
+  const btns = document.querySelectorAll('.lang button');
+  function setLang(l){
+    document.querySelectorAll('div[lang]').forEach(d => d.hidden = d.lang !== l);
+    btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === l)));
+    document.documentElement.lang = l;
+    try { localStorage.setItem('mjm-navod-lang', l); } catch(e) {}
+  }
+  btns.forEach(b => b.addEventListener('click', () => setLang(b.dataset.l)));
+  let l = 'cs';
+  try { l = localStorage.getItem('mjm-navod-lang') || 'cs'; } catch(e) {}
+  if (location.hash === '#en') l = 'en';
+  if (location.hash === '#cs') l = 'cs';
+  setLang(l);
+  document.querySelectorAll('.copy').forEach(b => b.addEventListener('click', () => {
+    const txt = b.dataset.copy, orig = b.textContent, done = b.closest('[lang]').lang === 'en' ? 'Copied' : 'Zkopírováno';
+    const ok = () => { b.textContent = done; setTimeout(() => b.textContent = orig, 1600); };
+    try { navigator.clipboard.writeText(txt).then(ok, () => sel(b)); } catch(e) { sel(b); }
+  }));
+  function sel(b){ const c = b.parentElement.querySelector('code'); const r = document.createRange(); r.selectNodeContents(c); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+})();
+</script>
+</body>
+</html>

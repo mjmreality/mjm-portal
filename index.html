@@ -44,6 +44,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 button{font:600 13px/1 var(--body);cursor:pointer;border-radius:6px;padding:9px 13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);white-space:nowrap}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 button.ghost{background:transparent;border-color:transparent;color:var(--accent);padding:6px 8px}
+a.navod{font:600 13px/1 var(--body);color:var(--accent);text-decoration:none;padding:6px 8px}
 button.danger{color:var(--bad)}
 button:disabled{opacity:.5;cursor:default}
 a{color:var(--accent)}
@@ -174,6 +175,7 @@ td input{padding:5px 7px}
         <button type="button" id="m-najemnik" data-mode="najemnik" aria-pressed="false">Pohled nájemníka</button>
         <button type="button" id="m-sprava" data-mode="sprava" aria-pressed="true">Správa <span id="m-badge"></span></button>
       </div>
+      <a id="navodLink" class="navod" href="navod.html" target="_blank" rel="noopener">Návod</a>
       <button type="button" id="logout" data-auth="logout" class="ghost" hidden>Odhlásit</button>
     </div>
   </header>
@@ -1726,6 +1728,7 @@ function render(){
   const f = document.activeElement && document.activeElement.id, sel = f && document.activeElement.selectionStart;
   $('#modeSeg').hidden = !(S.admin && S.phase==='app'); $('#logout').hidden = S.phase==='login' || S.phase==='loading';
   $('#protoNote').hidden = !(S.admin && S.phase==='app');
+  { let nl = S.regLang; try { if (S.phase==='app' && S.osobaId) nl = langOf(S.osobaId); } catch {} const a = $('#navodLink'); a.href = 'navod.html' + (nl==='en' ? '#en' : ''); a.textContent = nl==='en' ? 'Guide' : 'Návod'; a.hidden = S.admin && S.mode==='sprava' && S.phase==='app'; }
   $('#view').innerHTML = S.phase!=='app' ? viewPhase() : S.mode==='najemnik' ? viewTenant() : viewAdmin();
   if (f) { const el = document.getElementById(f); if (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)) { el.focus(); try{ if (sel!=null) el.setSelectionRange(sel,sel); }catch{} } }
 }
