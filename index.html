@@ -1,5 +1,13 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>MJM – portál nájemníků</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1E5A50">
+<link rel="icon" type="image/png" sizes="32x32" href="ikony/favicon-32.png">
+<link rel="apple-touch-icon" href="ikony/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MJM">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
@@ -447,6 +455,26 @@ function pasL(k, L){
   }).join('')}</div>`;
 }
 
+// ---------- instalace do telefonu (PWA)
+const INST = { prompt: null };
+const jeStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch { return false; } };
+const jeIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const instSkryto = () => { try { return localStorage.getItem('mjm-inst-skryt') === '1'; } catch { return false; } };
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INST.prompt = e; if (typeof render === 'function') try { render(); } catch {} });
+window.addEventListener('appinstalled', () => { INST.prompt = null; try { localStorage.setItem('mjm-inst-skryt','1'); } catch {} try { render(); } catch {} });
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+function instalaceCard(L){
+  if (jeStandalone() || instSkryto() || window.__MOCK_NOINST) return '';
+  const en = L === 'en';
+  const h = en ? 'Install the app on your phone' : 'Nainstalujte si aplikaci do telefonu';
+  const p = en ? 'You will have the MJM icon on your home screen and the app opens full screen, like any other app.' : 'Na ploše budete mít ikonu MJM a aplikace se otevře přes celou obrazovku jako každá jiná.';
+  let jak;
+  if (INST.prompt) jak = `<button type="button" class="primary" data-inst="go">${en ? 'Install the app' : 'Nainstalovat aplikaci'}</button>`;
+  else if (jeIOS()) jak = `<p>${en ? 'In Safari tap the <b>Share</b> button (square with an arrow) and then <b>Add to Home Screen</b>.' : 'V Safari klepněte na tlačítko <b>Sdílet</b> (čtvereček se šipkou) a pak na <b>Přidat na plochu</b>.'}</p>`;
+  else jak = `<p>${en ? 'In Chrome tap the menu <b>⋮</b> and then <b>Install app</b> or <b>Add to Home screen</b>.' : 'V Chromu klepněte na menu <b>⋮</b> a pak na <b>Nainstalovat aplikaci</b> nebo <b>Přidat na plochu</b>.'}</p>`;
+  return `<section class="card" style="border-color:var(--accent)"><div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap"><h3>${h}</h3><button type="button" class="ghost" data-inst="skryt" aria-label="${en?'Hide':'Skrýt'}">✕</button></div><p class="acct">${p}</p>${jak}</section>`;
+}
+
 // ---------- pohled nájemníka
 function osobyOptions(sel){
   return [...S.osoby].sort((a,b)=>a.jmeno.localeCompare(b.jmeno,'cs')).map(o=>`<option value="${o.id}"${o.id===sel?' selected':''}>${esc(o.jmeno)} · ${esc(adresaOf(o).adresa||'')}</option>`).join('');
@@ -465,6 +493,7 @@ function viewTenant(){
   h += `<div class="phone" lang="${L}"><div class="hello row" style="justify-content:space-between;align-items:flex-start"><div><b>${t.hello}, ${esc(o.jmeno.split(' ')[0])}</b><span>${esc(a.adresa||'')}</span></div>
     <div class="seg" role="group" aria-label="Jazyk / Language"><button type="button" data-lang="cs" aria-pressed="${L==='cs'}">CZ</button><button type="button" data-lang="en" aria-pressed="${L==='en'}">EN</button></div></div>`;
   if (kontrolaStav(o).zamceno) return h + kontrolaLock(o, L) + '</div>';
+  if (!S.admin) h += instalaceCard(L);
   h += oznCard(o, L);
   h += nastenkaCard(o, L);
   h += kontrolaCard(o, L);
@@ -1758,6 +1787,8 @@ document.addEventListener('click', async ev => {
   if (b.dataset.mode) { S.mode = b.dataset.mode; render(); return; }
   if (b.dataset.tab) { S.tab = b.dataset.tab; render(); return; }
   if (b.dataset.reg) { S.reg = b.dataset.reg==='1'; render(); window.scrollTo({top:0}); return; }
+  if (b.dataset.inst === 'go' && INST.prompt) { const pr = INST.prompt; INST.prompt = null; try { await pr.prompt(); } catch {} render(); return; }
+  if (b.dataset.inst === 'skryt') { try { localStorage.setItem('mjm-inst-skryt','1'); } catch {} render(); return; }
   if (b.dataset.simblok) { S.simBlok = !S.simBlok; render(); window.scrollTo({top:0}); return; }
   if (b.dataset.kmes) { S.kMes = addM(S.kMes || kontrolaYM(), +b.dataset.kmes * kontrolaPer()); render(); return; }
   if (b.dataset.nassel) { const q = (S.nasQ||'').toLowerCase(); if (b.dataset.nassel==='nic') S.nasAdr.clear(); else S.adresy.filter(a=>!q || a.adresa.toLowerCase().includes(q)).forEach(a=>S.nasAdr.add(a.id)); render(); return; }
@@ -2143,13 +2174,13 @@ function viewPhase(){
         <button class="primary" type="submit">${reg ? t.register : t.login}</button>
       </form>
       <div class="row" style="justify-content:space-between"><button type="button" class="ghost" data-auth="mode" style="padding-left:0">${reg ? t.toLogin : t.toReg}</button>${reg?'':`<button type="button" class="ghost" data-auth="reset">${t.reset}</button>`}</div>
-      <p class="acct">${t.spam}</p></section>`;
+      <p class="acct">${t.spam}</p>${jeStandalone() && jeIOS() ? `<p class="acct">${L==='en'?'If signing in with Google does not work here, use your email and password.':'Pokud tady nefunguje přihlášení přes Google, použijte e-mail a heslo.'}</p>` : ''}</section>${instalaceCard(L)}`;
   }
   else if (S.phase==='verify') body = head(t.verifyH) + `<section class="card"><p>${esc(t.verifyP(S.user?.email||''))}</p><p class="acct">${t.spam}</p>
       <div class="row"><button type="button" class="primary" data-auth="reloaded">${t.verified}</button><button type="button" data-auth="resend">${t.resend}</button></div></section>`;
   else if (S.phase==='register') body = head(t.regH) + `${S.me && S.me.stav==='zamitnuto' ? `<div class="warnbox">${t.rejected}${S.me.duvodZamitnuti?` ${esc(S.me.duvodZamitnuti)}`:''}</div>` : ''}
     <section class="card"><p class="acct">${t.regP}</p>${uzForm(L)}</section>`;
-  else if (S.phase==='pending') body = head(t.pendingH) + `<section class="card" style="border-color:var(--warn)"><p>${t.pendingP}</p></section>${infoCard(L)}${faqCard(L)}${odkazyCard(L)}`;
+  else if (S.phase==='pending') body = head(t.pendingH) + `<section class="card" style="border-color:var(--warn)"><p>${t.pendingP}</p></section>${instalaceCard(L)}${infoCard(L)}${faqCard(L)}${odkazyCard(L)}`;
   return `<div class="phone" lang="${L}">${body}</div>`;
 }
 function uzForm(L){
