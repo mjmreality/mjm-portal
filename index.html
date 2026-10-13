@@ -914,23 +914,28 @@ async function ulozDostupnost(ym, dny){
 // ---------- měsíční kontrola bytu: fotky kuchyně a koupelny + stavy vodoměrů (povinné, jednou za měsíc za byt)
 const TK = {
   cs:{ h:'Kontrola bytu', due:(m,d)=>`Kontrola za ${m}: nahrajte do ${d}`, doneH:'Kontrola bytu odevzdána', done:(m,kdo,d)=>`Za ${m} ji odevzdal(a) ${kdo} ${d}. Děkujeme.`,
-    why:'Jednou za měsíc nafoťte kuchyň a koupelnu a opište stavy vodoměrů. Stačí jeden člověk za celý byt.',
+    why:'nafoťte kuchyň a koupelnu a opište stavy vodoměrů. Stačí jeden člověk za celý byt.', late:(m,d)=>`Kontrola za ${m}: termín byl ${d}, nahrajte ji prosím co nejdřív`,
     lockH:'Aplikace je zamčená', lockP:d=>`Termín kontroly bytu byl ${d}. Dokud ji nenahrajete, aplikace vás dál nepustí a budou vám chodit upozornění.`,
     kuchyn:'Fotky kuchyně', koupelna:'Fotky koupelny', fotoHelp:'Aspoň 1 fotka, nejvýš 2. Vyfoťte celou místnost.', vodaH:'Stavy vodoměrů',
     studena:'Studená voda (m³)', tepla:'Teplá voda (m³)', vodoFoto:'Fotka vodoměrů (nepovinné)', pozn:'Je v bytě něco rozbitého? (nepovinné)', send:'Odeslat kontrolu',
     need:'Přidejte fotku kuchyně i koupelny a stavy obou vodoměrů.', uploading:'Nahrávám fotky…', ok:'Kontrola odeslána. Děkujeme.', fail:'Fotky se nepodařilo nahrát. Zkuste to znovu.',
     last:(m,s,t)=>`Minulý odečet (${m}): studená ${s} m³, teplá ${t} m³`, openForm:'Nahrát kontrolu', lower:'Stav je nižší než minule. Zkontrolujte číslo.' },
   en:{ h:'Flat check', due:(m,d)=>`Check for ${m}: upload by ${d}`, doneH:'Flat check done', done:(m,kdo,d)=>`For ${m} it was sent by ${kdo} on ${d}. Thank you.`,
-    why:'Once a month take photos of the kitchen and bathroom and copy the water meter readings. One person per flat is enough.',
+    why:'take photos of the kitchen and bathroom and copy the water meter readings. One person per flat is enough.', late:(m,d)=>`Check for ${m}: it was due on ${d}, please upload it as soon as possible`,
     lockH:'The app is locked', lockP:d=>`The flat check was due on ${d}. Until you upload it, the app will stay locked and you will keep getting reminders.`,
     kuchyn:'Kitchen photos', koupelna:'Bathroom photos', fotoHelp:'At least 1 photo, at most 2. Show the whole room.', vodaH:'Water meter readings',
     studena:'Cold water (m³)', tepla:'Hot water (m³)', vodoFoto:'Photo of the meters (optional)', pozn:'Is anything broken in the flat? (optional)', send:'Send the check',
     need:'Add photos of the kitchen and the bathroom and both meter readings.', uploading:'Uploading photos…', ok:'Check sent. Thank you.', fail:'The photos could not be uploaded. Please try again.',
     last:(m,s,t)=>`Last reading (${m}): cold ${s} m³, hot ${t} m³`, openForm:'Upload the check', lower:'The reading is lower than last time. Please check the number.' }
 };
-const kontrolaYM = () => nowYM();
+// Kontrola jednou za N měsíců (výchozí 3), počítáno od měsíce „Povinná od“.
+const kontrolaPer = () => Math.min(12, Math.max(1, +S.nast.kontrolaPerioda || 3));
+const ymDiff = (a, b) => { const [ya,ma] = a.split('-').map(Number), [yb,mb] = b.split('-').map(Number); return (yb-ya)*12 + (mb-ma); };
+const kontrolaYM = () => { const od = S.nast.kontrolaOd || '2026-10', now = nowYM(), d = ymDiff(od, now); return d < 0 ? od : addM(od, d - d % kontrolaPer()); };
+const kontrolaMesice = L => { const od = S.nast.kontrolaOd || '2026-10', P = kontrolaPer(); if (P === 1) return ''; const m = new Set(); for (let i = 0; i < 12; i += P) m.add(+addM(od, i).slice(5,7)); return [...m].sort((a,b)=>a-b).map(x => L==='en' ? MES_EN[x-1] : ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'][x-1]).join(', '); };
+const zaMes = (L) => { const P = kontrolaPer(), m = kontrolaMesice(L); if (L==='en') return P === 1 ? 'Once a month' : `Once every ${P} months (${m})`; return P === 1 ? 'Jednou za měsíc' : `Jednou za ${P} ${P<5?'měsíce':'měsíců'} (${m})`; };
 const kontrolaTermin = ym => `${ym}-${String(Math.min(28, Math.max(1, +S.nast.kontrolaDen||10))).padStart(2,'0')}`;
-const kontrolaPovinna = ym => ym >= (S.nast.kontrolaOd || '2026-10');
+const kontrolaPovinna = ym => ym >= (S.nast.kontrolaOd || '2026-10') && ymDiff(S.nast.kontrolaOd || '2026-10', ym) % kontrolaPer() === 0;
 const kontrolaZa = (adresaId, ym) => S.kontroly[`${adresaId}_${ym}`];
 function posledniKontrola(adresaId, predYM){
   return Object.values(S.kontroly).filter(k=>k.adresaId===adresaId && (!predYM || k.ym < predYM)).sort((a,b)=>b.ym.localeCompare(a.ym))[0];
@@ -939,7 +944,7 @@ function posledniKontrola(adresaId, predYM){
 function kontrolaStav(o){
   const ym = kontrolaYM(), termin = kontrolaTermin(ym), k = kontrolaZa(o.adresaId, ym);
   const povinna = kontrolaPovinna(ym) || S.simBlok;
-  return { ym, termin, k, povinna, zamceno: povinna && !k && (todayISO() > termin || S.simBlok) };
+  return { ym, termin, k, povinna, pozde: povinna && !k && todayISO() > termin, zamceno: povinna && !k && ((!!S.nast.kontrolaZamek && todayISO() > termin) || S.simBlok) };
 }
 function kontrolaForm(o, L){
   const t = TK[L], last = posledniKontrola(o.adresaId, kontrolaYM());
@@ -956,13 +961,13 @@ function kontrolaForm(o, L){
 }
 function kontrolaLock(o, L){
   const t = TK[L], s = kontrolaStav(o), fD = d => L==='en' ? `${+d.slice(8,10)} ${MES_EN[+d.slice(5,7)-1]} ${d.slice(0,4)}` : fDate(d);
-  return `<section class="card due"><span class="pill bad" style="align-self:flex-start">${t.lockH}</span><h3>${t.h} · ${mL(s.ym,L)}</h3><p>${t.lockP(fD(s.termin))}</p><p class="acct">${t.why}</p>${kontrolaForm(o, L)}</section>`;
+  return `<section class="card due"><span class="pill bad" style="align-self:flex-start">${t.lockH}</span><h3>${t.h} · ${mL(s.ym,L)}</h3><p>${t.lockP(fD(s.termin))}</p><p class="acct">${zaMes(L)} ${t.why}</p>${kontrolaForm(o, L)}</section>`;
 }
 function kontrolaCard(o, L){
   const t = TK[L], s = kontrolaStav(o), fD = d => L==='en' ? `${+d.slice(8,10)} ${MES_EN[+d.slice(5,7)-1]} ${d.slice(0,4)}` : fDate(d);
   if (s.k) { const kdo = S.osoby.find(x=>x.id===s.k.osobaId); return `<section class="card"><h3>${t.doneH}</h3><p class="acct">${t.done(mL(s.ym,L), esc(kdo?kdo.jmeno.split(' ')[0]:''), fD(s.k.kdy.slice(0,10)))}</p></section>`; }
   if (!s.povinna) return '';
-  return `<section class="card" style="border-color:var(--warn)"><h3>${t.h}</h3><div class="big" style="font-size:20px">${t.due(mL(s.ym,L), fD(s.termin))}</div><p class="acct">${t.why}</p>
+  return `<section class="card" style="border-color:var(--warn)"><h3>${t.h}</h3><div class="big" style="font-size:20px">${s.pozde ? t.late(mL(s.ym,L), fD(s.termin)) : t.due(mL(s.ym,L), fD(s.termin))}</div><p class="acct">${zaMes(L)} ${t.why}</p>
     <details class="more"${S.open.kform?' open':''}><summary data-kform="1">${t.openForm}</summary><div style="margin-top:10px">${kontrolaForm(o, L)}</div></details></section>`;
 }
 async function odeslatKontrolu(form){
@@ -1002,10 +1007,10 @@ function viewKontroly(){
       <div class="acts"><button data-act="kOk" data-id="${a.id}_${ym}">V pořádku</button><button class="danger" data-act="kProblemAsk" data-id="${a.id}_${ym}">Problém</button></div>
       ${S.open['kp'+a.id]?`<div class="row" style="grid-column:1/-1"><input id="kp-${a.id}_${ym}" placeholder="Co je špatně? Nájemník to uvidí" style="flex:1 1 240px"><button class="danger" data-act="kProblem" data-id="${a.id}_${ym}">Uložit problém</button></div>`:''}</div>`; };
   const lidiAdr = a => S.osoby.filter(o=>o.adresaId===a.id);
-  return `<div class="flow" style="margin-bottom:12px"><span>Každý měsíc do ${+S.nast.kontrolaDen||10}.</span>→<span>Byt nafotí kuchyň, koupelnu a vodoměry</span>→<span>Po termínu se aplikace zamkne a chodí upozornění</span>→<span>Vy zkontrolujete fotky</span></div>
-    <div class="row" style="margin-bottom:12px"><button type="button" data-kmes="-1" aria-label="Předchozí měsíc">‹</button><h2 style="min-width:140px;text-align:center">${mLabel(ym)}</h2><button type="button" data-kmes="1" aria-label="Další měsíc">›</button>
-      <span class="acct">Termín ${fDate(termin)}${kontrolaPovinna(ym)?'':' · v tomto měsíci ještě není povinná'}</span></div>
-    <div class="stats" style="margin-bottom:14px"><div><b>${hotove.length} z ${adr.length}</b><span>bytů odevzdalo</span></div><div><b>${chybi.length}</b><span>${poTerminu?'po termínu, mají zamčenou aplikaci':'ještě neodevzdalo'}</span></div>
+  return `<div class="flow" style="margin-bottom:12px"><span>${zaMes('cs')} do ${+S.nast.kontrolaDen||10}.</span>→<span>Byt nafotí kuchyň, koupelnu a vodoměry</span>→<span>${S.nast.kontrolaZamek?'Po termínu se aplikace zamkne a chodí upozornění':'Po termínu chodí upozornění (aplikace se nezamyká)'}</span>→<span>Vy zkontrolujete fotky</span></div>
+    <div class="row" style="margin-bottom:12px"><button type="button" data-kmes="-1" aria-label="Předchozí kontrola">‹</button><h2 style="min-width:140px;text-align:center">${mLabel(ym)}</h2><button type="button" data-kmes="1" aria-label="Další kontrola">›</button>
+      <span class="acct">Termín ${fDate(termin)}${kontrolaPovinna(ym)?'':' · v tomto měsíci není povinná'}</span></div>
+    <div class="stats" style="margin-bottom:14px"><div><b>${hotove.length} z ${adr.length}</b><span>bytů odevzdalo</span></div><div><b>${chybi.length}</b><span>${poTerminu?(S.nast.kontrolaZamek?'po termínu, mají zamčenou aplikaci':'po termínu'):'ještě neodevzdalo'}</span></div>
       <div><b>${hotove.filter(a=>kontrolaZa(a.id,ym).stav==='odevzdano').length}</b><span>čeká na vaši kontrolu</span></div><div><b>${hotove.filter(a=>kontrolaZa(a.id,ym).stav==='problem').length}</b><span>s problémem</span></div></div>
     <section class="panel"><h2>Odevzdané <span class="pill mute">${hotove.length}</span></h2>${hotove.map(item).join('') || '<p class="acct">Zatím žádný byt.</p>'}</section>
     <details class="panel"${poTerminu?' open':''}><summary style="cursor:pointer"><h2 style="display:inline">Chybí</h2> <span class="pill ${poTerminu&&chybi.length?'bad':'mute'}">${chybi.length}</span></summary>
@@ -1015,8 +1020,8 @@ function viewKontroly(){
 }
 function mailKontrola(L, ym){
   const termin = kontrolaTermin(ym), sig = S.nast.podpis||(L==='en'?'Accommodation management':'Správa ubytování');
-  if (L==='en') return { predmet:`Flat check for ${mL(ym,'en')} – due ${fDL(termin,'en')}`, text:`Hello,\n\nplease upload the monthly flat check in the tenant portal: photos of the kitchen and bathroom and the water meter readings. The deadline is ${fDL(termin,'en')}. One person per flat is enough.\n\nAfter the deadline the app stays locked until the check is uploaded.\n\n${sig}` };
-  return { predmet:`Kontrola bytu za ${mLabel(ym)} – termín ${fDate(termin)}`, text:`Dobrý den,\n\nnahrajte prosím v portálu nájemníků měsíční kontrolu bytu: fotky kuchyně a koupelny a stavy vodoměrů. Termín je ${fDate(termin)}. Stačí jeden člověk za byt.\n\nPo termínu zůstane aplikace zamčená, dokud kontrolu nenahrajete.\n\n${sig}` };
+  if (L==='en') return { predmet:`Flat check for ${mL(ym,'en')} – due ${fDL(termin,'en')}`, text:`Hello,\n\nplease upload the flat check in the tenant portal: photos of the kitchen and bathroom and the water meter readings. The deadline is ${fDL(termin,'en')}. One person per flat is enough.${S.nast.kontrolaZamek?'\n\nAfter the deadline the app stays locked until the check is uploaded.':''}\n\n${sig}` };
+  return { predmet:`Kontrola bytu za ${mLabel(ym)} – termín ${fDate(termin)}`, text:`Dobrý den,\n\nnahrajte prosím v portálu nájemníků kontrolu bytu: fotky kuchyně a koupelny a stavy vodoměrů. Termín je ${fDate(termin)}. Stačí jeden člověk za byt.${S.nast.kontrolaZamek?'\n\nPo termínu zůstane aplikace zamčená, dokud kontrolu nenahrajete.':''}\n\n${sig}` };
 }
 
 // ---------- nástěnka, stěhování, potvrzení o ubytování, kontakty a domovní řád
@@ -1219,7 +1224,8 @@ const FAQ = [
   ['Platby','Payments','Můžu dluh splácet po částech?','Can I pay a debt in instalments?','Ano, po dohodě. Rezervujte si v aplikaci schůzku a domluvíme splátkový kalendář.','Yes, by agreement. Book a meeting in the app and we will agree on a repayment plan.'],
   ['Vyúčtování','Utility bill','Co je nedoplatek z vyúčtování?','What is an amount owed from the utility bill?','Za rok se spotřebovalo víc vody nebo tepla, než pokryly zálohy. Rozdíl se rozdělí mezi nájemníky v bytě. Částku a QR kód najdete v sekci Platby.','During the year more water or heat was used than the advance payments covered. The difference is split among the tenants of the flat. You will find the amount and QR code in Payments.'],
   ['Kontrola bytu','Flat check','Proč musím posílat fotky kuchyně a koupelny?','Why do I have to send photos of the kitchen and bathroom?','Kontrolou včas odhalíme závady, jako je únik vody nebo plíseň, dřív než způsobí větší škodu.','The check helps us find problems like water leaks or mould early, before they cause bigger damage.'],
-  ['Kontrola bytu','Flat check','Co když nestihnu kontrolu do 10.?','What if I miss the check by the 10th?','Aplikace se zamkne, dokud kontrolu nenahrajete. Jakmile ji nahrajete, hned se odemkne.','The app locks until you upload the check. As soon as you upload it, it unlocks.'],
+  ['Kontrola bytu','Flat check','Jak často se kontrola posílá?','How often is the check sent?','Jednou za 3 měsíce, do 10. dne v měsíci. Aplikace vám ukáže, kdy je další kontrola na řadě.','Once every 3 months, by the 10th of the month. The app shows you when the next check is due.'],
+  ['Kontrola bytu','Flat check','Co když nestihnu kontrolu do 10.?','What if I miss the check by the 10th?','Nahrajte ji co nejdřív. Budou vám chodit upozornění, dokud ji někdo z bytu nepošle.','Upload it as soon as possible. You will keep getting reminders until someone from the flat sends it.'],
   ['Kontrola bytu','Flat check','Jak přečtu vodoměr?','How do I read the water meter?','Vyfoťte celý číselník a opište černá čísla, to jsou celé m³. Červená čísla opisovat nemusíte.','Take a photo of the whole dial and copy the black numbers, those are whole m³. You do not need to copy the red numbers.'],
   ['Kontrola bytu','Flat check','Posílá kontrolu každý nájemník?','Does every tenant send the check?','Ne, stačí jedna kontrola za celý byt.','No, one check per flat is enough.'],
   ['Závady','Repairs','Něco se rozbilo. Co mám dělat?','Something broke. What should I do?','Nahlaste závadu v sekci Údržba a přidejte fotky. Stav opravy uvidíte v aplikaci.','Report it in the Repairs section and add photos. You will see the repair status in the app.'],
@@ -1372,7 +1378,7 @@ function pasForm(o, L, p){
 }
 function pasCard(o, L){
   const t = TP[L], p = pasOf(o.id), fD = d => d ? fDL(d, L) : '';
-  if (!p || S.open['pe'+o.id]) return `<section class="card"${p?'':' style="border-color:var(--warn);box-shadow:inset 0 3px 0 var(--warn)"'}><div class="row" style="justify-content:space-between"><h3>${t.h}</h3>${p?'':`<span class="pill warn">${t.need}</span>`}</div><p class="acct">${t.why}</p>${pasForm(o, L, p)}</section>`;
+  if (!p || S.open['pe'+o.id]) return `<section class="card"${p?'':' style="border-color:var(--warn);box-shadow:inset 0 3px 0 var(--warn)"'}><div class="row" style="justify-content:space-between"><h3>${t.h}</h3>${p?'':`<span class="pill warn">${t.need}</span>`}</div><p class="acct">${zaMes(L)} ${t.why}</p>${pasForm(o, L, p)}</section>`;
   if (S.open['pn'+o.id]) return `<section class="card"><h3>${t.novy}</h3><p class="acct">${t.novyP}</p><form class="form" id="pasNovyForm">
     <div class="two"><label class="f" for="pn-pas">${t.novyPas}<input id="pn-pas" autocomplete="off" required></label><label class="f" for="pn-platnost">${t.platnost}<input id="pn-platnost" type="date" required></label></div>
     <div class="row"><button class="primary" type="submit">${t.save}</button><button type="button" data-pas="zavrit">${t.zrusit}</button></div></form></section>`;
@@ -1705,10 +1711,12 @@ function viewNastaveni(){
       </div>
       <h2>Kontrola bytu</h2>
       <div class="grid-form">
-        <label class="f" for="s-kden">Termín každý měsíc do (den)<input id="s-kden" type="number" min="1" max="28" value="${esc(n.kontrolaDen||10)}"></label>
+        <label class="f" for="s-kper">Jak často (měsíce)<select id="s-kper">${[1,2,3,4,6,12].map(x=>`<option value="${x}"${x===kontrolaPer()?' selected':''}>${x===1?'každý měsíc':'jednou za '+x+(x<5?' měsíce':' měsíců')}</option>`).join('')}</select></label>
+        <label class="f" for="s-kden">Termín v měsíci kontroly do (den)<input id="s-kden" type="number" min="1" max="28" value="${esc(n.kontrolaDen||10)}"></label>
         <label class="f" for="s-kod">Povinná od měsíce<input id="s-kod" type="month" value="${esc(n.kontrolaOd||'2026-10')}"></label>
         <label class="f" for="s-kpred">Upozornit dní před termínem<input id="s-kpred" type="number" min="0" max="10" value="${esc(n.kontrolaPred||3)}"></label>
         <label class="f" for="s-kopak">Po termínu upozorňovat každé (dny)<input id="s-kopak" type="number" min="1" max="7" value="${esc(n.kontrolaOpak||2)}"></label>
+        <label class="radio" style="align-self:end"><input type="checkbox" id="s-kzamek"${n.kontrolaZamek?' checked':''}><span>Po termínu zamknout aplikaci, dokud byt kontrolu neodevzdá</span></label>
       </div>
       <div><button class="primary" type="submit">Uložit nastavení</button></div>
     </form>
@@ -1751,7 +1759,7 @@ document.addEventListener('click', async ev => {
   if (b.dataset.tab) { S.tab = b.dataset.tab; render(); return; }
   if (b.dataset.reg) { S.reg = b.dataset.reg==='1'; render(); window.scrollTo({top:0}); return; }
   if (b.dataset.simblok) { S.simBlok = !S.simBlok; render(); window.scrollTo({top:0}); return; }
-  if (b.dataset.kmes) { S.kMes = addM(S.kMes || kontrolaYM(), +b.dataset.kmes); render(); return; }
+  if (b.dataset.kmes) { S.kMes = addM(S.kMes || kontrolaYM(), +b.dataset.kmes * kontrolaPer()); render(); return; }
   if (b.dataset.nassel) { const q = (S.nasQ||'').toLowerCase(); if (b.dataset.nassel==='nic') S.nasAdr.clear(); else S.adresy.filter(a=>!q || a.adresa.toLowerCase().includes(q)).forEach(a=>S.nasAdr.add(a.id)); render(); return; }
   if (b.dataset.schden) { S.schDen = b.dataset.schden; S.schCas = ''; render(); return; }
   if (b.dataset.schcas) { S.schCas = b.dataset.schcas; render(); return; }
@@ -1988,7 +1996,7 @@ document.addEventListener('submit', async ev => {
     await write(()=>db.doc('nastaveni/portal').set({...(S.portal||{}), ...d}), 'Firma uložena'); return;
   }
   if (ev.target.id==='setForm') {
-    const d = { firma:$('#s-firma').value.trim(), firmaEmail:$('#s-femail').value.trim(), firmaOsoba:$('#s-fosoba').value.trim(), firmaTel:$('#s-ftel').value.trim(), podpis:$('#s-podpis').value.trim(), whatsapp:$('#s-wa').value.trim(), emailUpozorneni:$('#s-mail').value.trim(), dniPred:+$('#s-pred').value||0, dniPo:+$('#s-po').value||0, dniPo2:+$('#s-po2').value||14, cenaStudena:+$('#s-cs').value||0, cenaTepla:+$('#s-ct').value||0, schuzkaMisto:$('#s-misto').value.trim(), schuzkaDelka:+$('#s-delka').value||30, kontrolaDen:+$('#s-kden').value||10, kontrolaOd:$('#s-kod').value||'2026-10', kontrolaPred:+$('#s-kpred').value||3, kontrolaOpak:+$('#s-kopak').value||2 };
+    const d = { firma:$('#s-firma').value.trim(), firmaEmail:$('#s-femail').value.trim(), firmaOsoba:$('#s-fosoba').value.trim(), firmaTel:$('#s-ftel').value.trim(), podpis:$('#s-podpis').value.trim(), whatsapp:$('#s-wa').value.trim(), emailUpozorneni:$('#s-mail').value.trim(), dniPred:+$('#s-pred').value||0, dniPo:+$('#s-po').value||0, dniPo2:+$('#s-po2').value||14, cenaStudena:+$('#s-cs').value||0, cenaTepla:+$('#s-ct').value||0, schuzkaMisto:$('#s-misto').value.trim(), schuzkaDelka:+$('#s-delka').value||30, kontrolaDen:+$('#s-kden').value||10, kontrolaOd:$('#s-kod').value||'2026-10', kontrolaPred:+$('#s-kpred').value||3, kontrolaOpak:+$('#s-kopak').value||2, kontrolaPerioda:+$('#s-kper').value||3, kontrolaZamek:!!$('#s-kzamek').checked };
     await write(()=>db.doc('nastaveni/portal').set({...(S.portal||{}), ...d}), 'Nastavení uloženo');
   }
 });
