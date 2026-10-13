@@ -470,7 +470,8 @@ function viewTenant(){
   h += kontrolaCard(o, L);
   const pasHore = pasPotreba(o);
   if (pasHore) h += pasCard(o, L);
-  if (o.srazkaOd) h += `<div class="card"><h3>${t.rentH}</h3><p>${t.srazka(mL(o.srazkaOd,L))}</p></div>`;
+  if (PLATBY_SKRYTE) h += `<section class="card"><h3>${L==='en'?'Payments':'Platby'}</h3><p>${L==='en'?'We are now processing all payments. Within a week you will see here how much you pay, a QR code for your payment and any debts.':'Platby teď zpracováváme. Do týdne tu uvidíte, kolik platíte, QR kód k platbě a případné dluhy.'}</p></section>`;
+  if (!PLATBY_SKRYTE && o.srazkaOd) h += `<div class="card"><h3>${t.rentH}</h3><p>${t.srazka(mL(o.srazkaOd,L))}</p></div>`;
   if (!TRIAL && p.overSum > 0.5) {
     h += `<section class="card due"><h3>${t.overH}</h3>
       <div class="big bad">${kcL(p.overSum,L)}</div>
@@ -490,7 +491,7 @@ function viewTenant(){
   } else if (!TRIAL && platce && p.overSum < 0.5) {
     h += `<section class="card"><h3>${t.payH}</h3><p>${t.nothing}</p></section>`;
   }
-  h += zadostCard(o, L);
+  if (!PLATBY_SKRYTE) h += zadostCard(o, L);
   if (S.admin && !o.vs && o.plati) h += `<div class="warnbox" lang="cs">Jen pro vás: tento nájemník nemá variabilní symbol. Platba se pak páruje jen podle jména a účtu. Doplňte VS v přehledu plateb.</div>`;
 
   const sekce = [['Splátka služeb', t.billH, +o.sDluh, k.sluzbyZbyva], ['Splátka dluhu', t.planH, +o.dluh, k.dluhZbyva]];
@@ -2021,6 +2022,8 @@ function mergeOsoby(){
 }
 // ---------- napojení na Firebase (zkušební verze)
 const TRIAL = true;
+// Platby zatím nájemníkům neukazujeme vůbec (předpisy, QR kódy, dluhy). Až budou zpracované, přepněte na false.
+const PLATBY_SKRYTE = true;
 const ADMINS = ['b.krejcova@mjmreality.cz', 'm.uhlirova@mjmpersonalni.cz'];
 let AUTH = null;
 const UNSUB = [], TUNSUB = [];
