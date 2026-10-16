@@ -2234,8 +2234,57 @@ function viewUzivatele(){
     <p class="note" style="margin-bottom:12px">Potvrďte jen toho, o kom víte, kdo to je. Když si nejste jistá, zavolejte na telefon z registrace.</p>
     <section class="panel"><h2>Čeká na potvrzení <span class="pill mute">${ceka.length}</span></h2><p class="note">Aplikace sama navrhne, ke komu z přehledu registrace patří (podle jména a adresy). Zkontrolujte to a potvrďte.</p>${ceka.map(item).join('') || '<p class="acct">Nikdo nečeká.</p>'}</section>
     <details class="panel" open><summary style="cursor:pointer"><h2 style="display:inline">Potvrzení nájemníci</h2> <span class="pill mute">${hotovo.length}</span></summary>
-      ${hotovo.map(u=>{ const o = S.osoby.find(x=>x.id===u.osobaId) || {}; return `<div class="li"><span><b>${esc(o.jmeno||u.jmeno)}</b><br><span class="acct">${esc(adresaOf(o).adresa||'')} · ${esc(u.email||'')} · ${fDate(u.schvaleno)}</span></span><span class="r"><button class="ghost danger" data-uz="zrusit" data-id="${u._id}">Zrušit přístup</button></span></div>`; }).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
+      <p class="note">Spletla jste se při potvrzení? U člověka klikněte na „Upravit“. Můžete ho přiřadit k jinému člověku z přehledu, nebo změnit předpis a od kdy platí.</p>
+      ${hotovo.map(potvrzenyItem).join('') || '<p class="acct">Zatím nikdo.</p>'}</details>
     ${zam.length?`<details class="panel"><summary style="cursor:pointer"><h2 style="display:inline">Zamítnuté</h2> <span class="pill mute">${zam.length}</span></summary>${zam.map(u=>`<div class="li"><span><b>${esc(u.jmeno)}</b><br><span class="acct">${esc(u.email||'')}${u.duvodZamitnuti?` · ${esc(u.duvodZamitnuti)}`:''}</span></span></div>`).join('')}</details>`:''}`;
+}
+// potvrzený nájemník: řádek s možností úpravy (přiřazení k jinému člověku, předpis, od kdy platí)
+function potvrzenyItem(u){
+  const o = S.osoby.find(x=>x.id===u.osobaId) || {}, a = adresaOf(o), auto = String(u.osobaId||'').startsWith('n');
+  const hlava = `<span><b>${esc(o.jmeno||u.jmeno)}</b>${auto?' <span class="pill acc">přidán jako nový člověk</span>':''}<br><span class="acct">${esc(a.adresa||'')}${o.vs?` · VS ${esc(o.vs)}`:''} · ${o.plati&&+o.predpis>0?`předpis ${kc(o.predpis)}${o.od?` od ${mLabel(o.od)}`:''}`:'bez předpisu'} · ${esc(u.email||'')} · potvrzeno ${fDate(u.schvaleno)}</span>${u.jmeno && o.jmeno && u.jmeno!==o.jmeno?`<br><span class="acct">Při registraci napsal(a): ${esc(u.jmeno)}</span>`:''}</span>`;
+  const btn = `<span class="r"><button data-uz="edit" data-id="${u._id}">${S.open['ue'+u._id]?'Zavřít':'Upravit'}</button> <button class="ghost danger" data-uz="zrusit" data-id="${u._id}">Zrušit přístup</button></span>`;
+  if (!S.open['ue'+u._id]) return `<div class="li">${hlava}${btn}</div>`;
+  const kand = S.osoby.filter(x=>x.id!==o.id).map(x=>({o:x, s: podobnost(x.jmeno, u.jmeno) + (x.adresaId===(u.adresaId||o.adresaId) ? 0.5 : 0)}))
+    .sort((x,y)=>y.s-x.s || x.o.jmeno.localeCompare(y.o.jmeno,'cs'));
+  const opt = x => `<option value="${x.id}">${esc(x.jmeno)} · ${esc(adresaOf(x).adresa||'')} · VS ${esc(x.vs||'—')}${maUcet(x)?' · už má účet':''}</option>`;
+  const blizko = kand.filter(x=>x.s>=0.5), ostatni = kand.filter(x=>x.s<0.5);
+  return `<div class="li" style="flex-wrap:wrap">${hlava}${btn}
+    <div class="grid-form" style="flex-basis:100%;background:var(--surface2);border-radius:8px;padding:10px;margin-top:8px">
+      <label class="f" for="ueo-${u._id}" style="grid-column:1/-1">Kdo to je v přehledu<select id="ueo-${u._id}">
+        <option value="${esc(o.id||'')}" selected>${esc(o.jmeno||u.jmeno)} · ${esc(a.adresa||'')} · VS ${esc(o.vs||'—')} (teď)</option>
+        ${blizko.length?`<optgroup label="Podobné jméno nebo stejná adresa">${blizko.map(x=>opt(x.o)).join('')}</optgroup>`:''}
+        <optgroup label="Všichni ostatní">${ostatni.map(x=>opt(x.o)).join('')}</optgroup>
+      </select></label>
+      <label class="radio" style="align-self:center"><input type="checkbox" id="uep-${u._id}"${o.plati?' checked':''}><span>Platí ubytování sám/sama</span></label>
+      <label class="f" for="uepr-${u._id}">Předpis Kč / měsíc<input id="uepr-${u._id}" type="number" step="1" min="0" value="${+o.predpis||''}"></label>
+      <label class="f" for="ueod-${u._id}">Platí od měsíce<input id="ueod-${u._id}" type="month" value="${esc(o.od||'')}"></label>
+      <p class="acct" style="grid-column:1/-1">${auto?'Tento člověk byl při potvrzení přidán jako nový. Pokud už v přehledu je, vyberte ho nahoře. Omylem přidaný záznam se pak sám smaže.':'Když vyberete jiného člověka, účet se přepojí na něj. Předpis a „od“ se uloží k vybranému člověku.'}</p>
+      <div class="row" style="grid-column:1/-1"><button class="primary" data-uz="editSave" data-id="${u._id}">Uložit změny</button></div>
+    </div></div>`;
+}
+async function uzUpravit(uid){
+  const u = S.uzivatele.find(x=>x._id===uid); if (!u) return;
+  const oldId = u.osobaId || '', newId = document.getElementById('ueo-'+uid)?.value || oldId;
+  const n = S.osoby.find(x=>x.id===newId); if (!n) { toast('Vyberte člověka z přehledu.'); return; }
+  const plati = !!document.getElementById('uep-'+uid)?.checked, predpis = +(document.getElementById('uepr-'+uid)?.value||0), od = document.getElementById('ueod-'+uid)?.value||'';
+  if (plati && (!(predpis > 0) || !od)) { toast('Vyplňte předpis a měsíc, od kdy platí.'); return; }
+  const ops = [], upd = {plati, predpis: plati ? predpis : (+n.predpis||0), od: od || n.od || ''};
+  if (newId !== oldId) {
+    Object.assign(upd, {uid, email:u.email||''});
+    const k = kontakt(newId), kOld = kontakt(oldId);
+    ops.push(['merge', 'kontakty/'+newId, {email:u.email||k.email||'', telefon:u.telefon||k.telefon||kOld.telefon||'', jazyk:kOld.jazyk||k.jazyk||(u.jazyk==='en'?'en':'cs')}]);
+    if (S.pasy[oldId] && !S.pasy[newId]) ops.push(['set', 'pasy/'+newId, {...S.pasy[oldId], osobaId:newId}]);
+    const jinyUcet = S.uzivatele.some(x=>x._id!==uid && x.osobaId===oldId && x.stav==='schvaleno');
+    if (oldId.startsWith('n') && !jinyUcet) {
+      ops.push(['delete', 'osoby/'+oldId]);
+      if (S.kontakty[oldId]) ops.push(['delete', 'kontakty/'+oldId]);
+      if (S.pasy[oldId]) ops.push(['delete', 'pasy/'+oldId]);
+    } else if (oldId && S.osoby.some(x=>x.id===oldId) && !jinyUcet) ops.push(['update', 'osoby/'+oldId, {uid:'', email:''}]);
+    ops.push(['update', 'uzivatele/'+uid, {osobaId:newId, adresaId:n.adresaId||'', upraveno:new Date().toISOString()}]);
+  }
+  ops.unshift(['update', 'osoby/'+newId, upd]);
+  const ok = await write(()=>db.batch(ops), newId !== oldId ? `Přepojeno na ${n.jmeno}.` : 'Uloženo');
+  if (ok !== false) { delete S.open['ue'+uid]; render(); }
 }
 async function uzSchvalit(uid){
   const u = S.uzivatele.find(x=>x._id===uid); if (!u) return;
@@ -2404,6 +2453,8 @@ document.addEventListener('click', async ev => {
     const id = b.dataset.id, v = b.dataset.uz;
     if (v==='ok') { b.disabled = true; await uzSchvalit(id); b.disabled = false; }
     if (v==='noAsk') { S.open['uz'+id] = 1; render(); document.getElementById('uzd-'+id)?.focus(); }
+    if (v==='edit') { S.open['ue'+id] = S.open['ue'+id] ? 0 : 1; render(); return; }
+    if (v==='editSave') { b.disabled = true; await uzUpravit(id); b.disabled = false; return; }
     if (v==='zrusit') { await write(()=>db.doc('uzivatele/'+id).update({stav:'zruseno', zruseno:new Date().toISOString()}), 'Přístup zrušen. Nájemníkovi vytvořte nový kód.'); return; }
     if (v==='no') { await write(()=>db.doc('uzivatele/'+id).update({stav:'zamitnuto', duvodZamitnuti:(document.getElementById('uzd-'+id)?.value||'').trim()}), 'Zamítnuto'); delete S.open['uz'+id]; }
     return;
@@ -2413,6 +2464,12 @@ document.addEventListener('click', async ev => {
 });
 document.addEventListener('change', async ev => {
   const t = ev.target;
+  if (t.id && t.id.startsWith('ueo-')) {  // úprava potvrzeného: po výběru jiného člověka předvyplnit jeho předpis
+    const id = t.id.slice(4), o = S.osoby.find(x=>x.id===t.value) || {};
+    const c = document.getElementById('uep-'+id), pr = document.getElementById('uepr-'+id), od = document.getElementById('ueod-'+id);
+    if (c) c.checked = !!o.plati; if (pr) pr.value = +o.predpis || ''; if (od) od.value = o.od || '';
+    return;
+  }
   if (t.dataset && t.dataset.osf) {
     const id = t.dataset.id, f = t.dataset.osf, v = f==='plati' ? t.checked : (+t.value || 0);
     await write(()=>db.doc('osoby/'+id).update({[f]: v}), 'Uloženo');
